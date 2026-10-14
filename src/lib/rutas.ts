@@ -1,7 +1,8 @@
 export const RUTA_INGRESAR = "/ingresar";
+export const RUTA_REGISTRO = "/registro";
 export const RUTA_INICIO_PRIVADO = "/viajes";
 
-const RUTAS_DE_AUTENTICACION = [RUTA_INGRESAR, "/registro"];
+const RUTAS_DE_AUTENTICACION = [RUTA_INGRESAR, RUTA_REGISTRO];
 
 function coincide(ruta: string, base: string): boolean {
   return ruta === base || ruta.startsWith(`${base}/`);

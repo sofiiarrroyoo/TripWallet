@@ -9,7 +9,7 @@ const bricolage = Bricolage_Grotesque({
 });
 
 export const metadata: Metadata = {
-  title: "TripWallet",
+  title: { default: "TripWallet", template: "%s · TripWallet" },
   description: "Copiloto de gastos de viaje multimoneda con IA",
 };
 
