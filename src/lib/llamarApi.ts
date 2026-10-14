@@ -19,15 +19,25 @@ type OpcionesLlamada = {
 // Para las respuestas cuyo cuerpo no se usa (un 204, o un login que solo necesita saber si salió bien).
 export const sinDatos = z.unknown().transform(() => null);
 
-const ERROR_RED: ErrorApi = {
+export const ERROR_RED: ErrorApi = {
   codigo: "ERROR_RED",
   mensaje: "No pudimos conectarnos. Revisá tu conexión y probá de nuevo.",
 };
 
-const ERROR_INESPERADO: ErrorApi = {
+export const ERROR_INESPERADO: ErrorApi = {
   codigo: "ERROR_INTERNO",
   mensaje: "Ocurrió un error inesperado. Probá de nuevo en unos minutos.",
 };
+
+// Para quien recibe el cuerpo de una respuesta como texto (ej. el chat, que no pasa por llamarApi).
+export function leerErrorApi(texto: string): ErrorApi | null {
+  try {
+    const cuerpo = esquemaCuerpoError.safeParse(JSON.parse(texto));
+    return cuerpo.success ? cuerpo.data.error : null;
+  } catch {
+    return null;
+  }
+}
 
 async function leerJson(respuesta: Response): Promise<unknown> {
   try {

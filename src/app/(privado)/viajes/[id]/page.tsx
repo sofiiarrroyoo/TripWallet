@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { aMensajeUI } from "@/componentes/chat/mensajesUI";
+import { ChatViaje } from "@/componentes/chat/ChatViaje";
 import { CLASES_TITULO_PAGINA, CuerpoPagina, EncabezadoPagina, EnlaceVolver } from "@/componentes/pagina/Pagina";
 import { ErrorNoEncontrado } from "@/errores";
 import { formatearMonto, formatearRangoFechas } from "@/lib/formatos";
 import { RUTA_INICIO_PRIVADO } from "@/lib/rutas";
-import { obtenerViaje } from "@/servicios/viajes";
-import type { Viaje } from "@/tipos/viaje";
+import { cargarChat } from "@/servicios/chat";
 
 export const metadata: Metadata = { title: "Viaje" };
 
-async function buscarViaje(id: string): Promise<Viaje> {
+async function buscarChat(id: string) {
   try {
-    return await obtenerViaje(id);
+    return await cargarChat(id);
   } catch (error) {
     if (error instanceof ErrorNoEncontrado) notFound();
     throw error;
@@ -30,7 +31,7 @@ function Dato({ etiqueta, valor }: { etiqueta: string; valor: string }) {
 
 export default async function PaginaViaje({ params }: PageProps<"/viajes/[id]">) {
   const { id } = await params;
-  const viaje = await buscarViaje(id);
+  const { viaje, mensajes } = await buscarChat(id);
 
   return (
     <section aria-labelledby="titulo-viaje">
@@ -56,7 +57,13 @@ export default async function PaginaViaje({ params }: PageProps<"/viajes/[id]">)
           />
           <Dato etiqueta="Estado" valor={viaje.estado === "abierto" ? "Abierto" : "Cerrado"} />
         </dl>
-        <p className="text-lg">Pronto vas a poder contarle tus gastos al chat de este viaje.</p>
+        <ChatViaje
+          key={viaje.id}
+          viajeId={viaje.id}
+          destino={viaje.destino}
+          viajeCerrado={viaje.estado === "cerrado"}
+          mensajesIniciales={mensajes.map(aMensajeUI)}
+        />
       </CuerpoPagina>
     </section>
   );

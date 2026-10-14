@@ -14,3 +14,4 @@ export { ErrorViajeSinGastos } from "./conflictos/ErrorViajeSinGastos";
 export { ErrorGastosModificados } from "./conflictos/ErrorGastosModificados";
 export { ErrorCategoriaDuplicada } from "./conflictos/ErrorCategoriaDuplicada";
 export { ErrorEmailYaRegistrado } from "./conflictos/ErrorEmailYaRegistrado";
+export { ErrorSinMensajePendiente } from "./conflictos/ErrorSinMensajePendiente";
