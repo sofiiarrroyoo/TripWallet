@@ -65,6 +65,20 @@ export async function crearGasto(gasto: NuevoGasto): Promise<Gasto> {
   return aGasto(data);
 }
 
+// El gasto cargado más recientemente en el viaje (el que corresponde a "borrá el último"), o null si no hay.
+export async function obtenerUltimoGasto(viajeId: string): Promise<Gasto | null> {
+  const supabase = await crearClienteSupabase();
+  const { data, error } = await supabase
+    .from("gastos")
+    .select(COLUMNAS)
+    .eq("viaje_id", viajeId)
+    .order("creado_en", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? aGasto(data) : null;
+}
+
 // Devuelve false si no había ningún gasto con ese id en ese viaje (o no es del usuario): el RLS no deja ver los ajenos.
 export async function eliminarGasto(viajeId: string, gastoId: string): Promise<boolean> {
   const supabase = await crearClienteSupabase();

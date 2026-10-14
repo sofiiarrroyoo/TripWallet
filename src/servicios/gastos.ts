@@ -58,6 +58,35 @@ export async function registrarGasto(viajeId: string, datos: unknown, hoy: strin
   };
 }
 
+// Lo que el bot necesita para confirmar qué se borró.
+export type GastoEliminado = Pick<
+  GastoRegistrado,
+  "id" | "descripcion" | "fechaGasto" | "montoOriginal" | "monedaOriginal" | "montoConvertido" | "monedaBase"
+>;
+
+// "Borrá el último gasto". El bot no conoce los ids de los gastos anteriores (su historial es solo texto), así que
+// desde el chat solo se puede borrar el más reciente; el resto se deshace con el botón de la tarjeta.
+export async function eliminarUltimoGasto(viajeId: string): Promise<GastoEliminado> {
+  const viaje = await obtenerViaje(viajeId);
+  if (viaje.estado === "cerrado") throw new ErrorViajeCerrado();
+
+  const ultimo = await repositorio.obtenerUltimoGasto(viaje.id);
+  if (!ultimo) throw new ErrorNoEncontrado("GASTO");
+
+  const borrado = await repositorio.eliminarGasto(viaje.id, ultimo.id);
+  if (!borrado) throw new ErrorNoEncontrado("GASTO");
+
+  return {
+    id: ultimo.id,
+    descripcion: ultimo.descripcion,
+    fechaGasto: ultimo.fechaGasto,
+    montoOriginal: ultimo.montoOriginal,
+    monedaOriginal: ultimo.monedaOriginal,
+    montoConvertido: ultimo.montoConvertido,
+    monedaBase: viaje.monedaBase,
+  };
+}
+
 // La base no distingue "el gasto no existe" de "el viaje está cerrado" al borrar (el RLS esconde la fila), así que
 // el estado del viaje se comprueba acá.
 export async function eliminarGasto(viajeId: string, gastoId: string): Promise<void> {

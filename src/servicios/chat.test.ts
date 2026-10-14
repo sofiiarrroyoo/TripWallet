@@ -6,16 +6,25 @@ import {
   ErrorNoEncontrado,
   ErrorSinMensajePendiente,
   ErrorValidacion,
+  ErrorViajeCerrado,
 } from "@/errores";
 import { obtenerModelo } from "@/integraciones/modeloLLM";
 import * as repositorio from "@/repositorios/mensajes";
+import type { Categoria } from "@/tipos/categoria";
+import type { GastoRegistrado } from "@/tipos/gasto";
 import type { Mensaje } from "@/tipos/mensaje";
+import type { LlamadaTool } from "@/validaciones/mensajes";
 import type { Viaje } from "@/tipos/viaje";
 import { LIMITE_MENSAJES_POR_HORA, cargarChat, responderMensaje } from "./chat";
+import { listarCategorias } from "./categorias";
+import { registrarGasto } from "./gastos";
 import { obtenerViaje } from "./viajes";
 
 vi.mock("@/repositorios/mensajes");
 vi.mock("./viajes");
+vi.mock("./categorias");
+vi.mock("./gastos");
+vi.mock("./cotizaciones");
 vi.mock("@/integraciones/modeloLLM", () => ({
   obtenerModelo: vi.fn(),
   obtenerNombreModelo: () => "modelo-de-prueba",
@@ -36,13 +45,18 @@ const viaje: Viaje = {
   creadoEn: "2026-10-14T12:00:00Z",
 };
 
-function mensaje(rol: Mensaje["rol"], contenido: string): Mensaje {
+const categorias: Categoria[] = [
+  { id: "c-1", nombre: "Comida y bebida", esPorDefecto: true },
+  { id: "c-2", nombre: "Transporte", esPorDefecto: true },
+];
+
+function mensaje(rol: Mensaje["rol"], contenido: string, llamadasTools: LlamadaTool[] = []): Mensaje {
   return {
     id: `${rol}-${contenido}`,
     viajeId: viaje.id,
     rol,
     contenido,
-    llamadasTools: [],
+    llamadasTools,
     tokensEntrada: null,
     tokensSalida: null,
     modelo: null,
@@ -129,6 +143,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.spyOn(console, "error").mockImplementation(() => {});
   vi.mocked(obtenerViaje).mockResolvedValue(viaje);
+  vi.mocked(listarCategorias).mockResolvedValue(categorias);
   vi.mocked(repositorio.listarFechasMensajesUsuarioDesde).mockResolvedValue([]);
   vi.mocked(repositorio.listarUltimosMensajes).mockResolvedValue([mensaje("user", "hola")]);
   vi.mocked(repositorio.crearMensaje).mockImplementation(async (nuevo) => mensaje(nuevo.rol, nuevo.contenido));
@@ -156,6 +171,7 @@ describe("responderMensaje", () => {
       viajeId: "viaje-1",
       rol: "assistant",
       contenido: "Hola mundo",
+      llamadasTools: [],
       tokensEntrada: 10,
       tokensSalida: 5,
       modelo: "modelo-de-prueba",
@@ -337,5 +353,174 @@ describe("cargarChat", () => {
 
     await expect(cargarChat("ajeno")).rejects.toBeInstanceOf(ErrorNoEncontrado);
     expect(repositorio.listarUltimosMensajes).not.toHaveBeenCalled();
+  });
+});
+
+describe("tools", () => {
+  const entradaGasto = { monto: 15000, moneda: "CLP", categoria: "Comida y bebida", descripcion: "Cena" };
+
+  const gastoRegistrado: GastoRegistrado = {
+    id: "g-1",
+    descripcion: "Cena",
+    categoria: "Comida y bebida",
+    fechaGasto: "2026-10-14",
+    montoOriginal: 15000,
+    monedaOriginal: "CLP",
+    montoConvertido: 21750,
+    monedaBase: "ARS",
+    cotizacion: 1.45,
+    fechaCotizacion: "2026-10-14",
+    fuente: "ExchangeRate-API (open.er-api.com)",
+    aviso: null,
+  };
+
+  const usoDe = (entrada: number, salida: number) => ({
+    inputTokens: { total: entrada, noCache: entrada, cacheRead: undefined, cacheWrite: undefined },
+    outputTokens: { total: salida, text: salida, reasoning: undefined },
+  });
+
+  // Un paso del modelo en el que decide llamar a una tool.
+  function pasoConTool(toolName: string, entrada: unknown, tokens = { entrada: 100, salida: 20 }) {
+    return {
+      stream: simulateReadableStream({
+        chunks: [
+          { type: "tool-call" as const, toolCallId: `llamada-${toolName}`, toolName, input: JSON.stringify(entrada) },
+          {
+            type: "finish" as const,
+            finishReason: { unified: "tool-calls" as const, raw: undefined },
+            usage: usoDe(tokens.entrada, tokens.salida),
+          },
+        ],
+      }),
+    };
+  }
+
+  // Un paso del modelo en el que responde con texto.
+  function pasoConTexto(texto: string, tokens = { entrada: 150, salida: 10 }) {
+    return {
+      stream: simulateReadableStream({
+        chunks: [
+          { type: "text-start" as const, id: "t1" },
+          { type: "text-delta" as const, id: "t1", delta: texto },
+          { type: "text-end" as const, id: "t1" },
+          {
+            type: "finish" as const,
+            finishReason: { unified: "stop" as const, raw: undefined },
+            usage: usoDe(tokens.entrada, tokens.salida),
+          },
+        ],
+      }),
+    };
+  }
+
+  function modeloEnPasos(...pasos: Array<ReturnType<typeof pasoConTool> | ReturnType<typeof pasoConTexto>>) {
+    return usarModelo(new MockLanguageModelV4({ doStream: pasos }));
+  }
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    // 15:00 UTC del 14/10: en Buenos Aires también es 14/10.
+    vi.setSystemTime(new Date("2026-10-14T15:00:00Z"));
+  });
+
+  it("el modelo registra un gasto, ve el resultado y confirma; todo queda guardado en el mensaje", async () => {
+    vi.mocked(registrarGasto).mockResolvedValue(gastoRegistrado);
+    modeloEnPasos(pasoConTool("registrar_gasto", entradaGasto), pasoConTexto("Listo, lo registré."));
+
+    const fragmentos = await leerTodo(await responderMensaje("viaje-1", enviar("pagué 15 lucas chilenas la cena"), sinSenal()));
+
+    // El viaje y la fecha de hoy los puso el servidor.
+    expect(registrarGasto).toHaveBeenCalledWith("viaje-1", entradaGasto, "2026-10-14");
+    expect(fragmentos.some((f) => f.type === "tool-output-available")).toBe(true);
+    expect(repositorio.crearMensaje).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        rol: "assistant",
+        contenido: "Listo, lo registré.",
+        llamadasTools: [
+          { nombre: "registrar_gasto", argumentos: entradaGasto, resultado: { ok: true, gasto: gastoRegistrado } },
+        ],
+        // Suma de los dos pasos.
+        tokensEntrada: 250,
+        tokensSalida: 30,
+      }),
+    );
+  });
+
+  it("si la tool falla, el modelo recibe la falla como resultado y la explica", async () => {
+    vi.mocked(registrarGasto).mockRejectedValue(new ErrorViajeCerrado());
+    modeloEnPasos(pasoConTool("registrar_gasto", entradaGasto), pasoConTexto("El viaje está cerrado, no puedo registrarlo."));
+
+    await leerTodo(await responderMensaje("viaje-1", enviar("pagué la cena"), sinSenal()));
+
+    expect(repositorio.crearMensaje).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        contenido: "El viaje está cerrado, no puedo registrarlo.",
+        llamadasTools: [
+          {
+            nombre: "registrar_gasto",
+            argumentos: entradaGasto,
+            resultado: { ok: false, codigo: "VIAJE_CERRADO", mensaje: new ErrorViajeCerrado().message },
+          },
+        ],
+      }),
+    );
+  });
+
+  it("después de una pregunta con opciones el turno termina y la pregunta queda guardada", async () => {
+    const pregunta = { pregunta: "¿En qué pesos pagaste?", opciones: ["Argentinos", "Chilenos"] };
+    const modelo = modeloEnPasos(pasoConTool("pedir_datos", pregunta), pasoConTexto("Esto no tendría que decirse."));
+
+    await leerTodo(await responderMensaje("viaje-1", enviar("gasté 5 mil pesos"), sinSenal()));
+
+    expect(modelo.doStreamCalls).toHaveLength(1);
+    expect(repositorio.crearMensaje).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        rol: "assistant",
+        contenido: "",
+        llamadasTools: [{ nombre: "pedir_datos", argumentos: pregunta, resultado: { ok: true } }],
+      }),
+    );
+  });
+
+  it("le ofrece al modelo las 5 tools y las categorías disponibles", async () => {
+    const modelo = modeloEnPasos(pasoConTexto("ok"));
+
+    await leerTodo(await responderMensaje("viaje-1", enviar("hola"), sinSenal()));
+
+    const llamada = modelo.doStreamCalls[0];
+    const nombres = JSON.stringify(llamada?.tools);
+    for (const tool of ["registrar_gasto", "convertir_moneda", "eliminar_gasto", "crear_categoria", "pedir_datos"]) {
+      expect(nombres).toContain(tool);
+    }
+    expect(JSON.stringify(llamada?.prompt[0])).toContain("Comida y bebida, Transporte");
+  });
+
+  it("las tools no reciben el viaje del modelo: su esquema no tiene ese campo", async () => {
+    const modelo = modeloEnPasos(pasoConTexto("ok"));
+
+    await leerTodo(await responderMensaje("viaje-1", enviar("hola"), sinSenal()));
+
+    expect(JSON.stringify(modelo.doStreamCalls[0]?.tools)).not.toMatch(/viajeId|viaje_id/);
+  });
+
+  it("una pregunta anterior sin texto propio llega al modelo como la pregunta con sus opciones", async () => {
+    const modelo = modeloEnPasos(pasoConTexto("Dale, en pesos chilenos."));
+    vi.mocked(repositorio.listarUltimosMensajes).mockResolvedValue([
+      mensaje("user", "gasté 5 mil pesos"),
+      mensaje("assistant", "", [
+        {
+          nombre: "pedir_datos",
+          argumentos: { pregunta: "¿En qué pesos pagaste?", opciones: ["Argentinos", "Chilenos"] },
+          resultado: { ok: true },
+        },
+      ]),
+      mensaje("user", "Chilenos"),
+    ]);
+
+    await leerTodo(await responderMensaje("viaje-1", enviar("Chilenos"), sinSenal()));
+
+    const prompt = JSON.stringify(modelo.doStreamCalls[0]?.prompt);
+    expect(prompt).toContain("¿En qué pesos pagaste?");
+    expect(prompt).toContain("Opciones: Argentinos / Chilenos");
   });
 });

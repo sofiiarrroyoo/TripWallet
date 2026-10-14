@@ -11,7 +11,7 @@ import { EntradaChat } from "./EntradaChat";
 import { GloboMensaje } from "./GloboMensaje";
 import { IndicadorActividad } from "./IndicadorActividad";
 import { mensajeDeError } from "./mensajeDeError";
-import { textoDe } from "./mensajesUI";
+import { textoDe, textoVisible } from "./mensajesUI";
 
 type Props = {
   viajeId: string;
@@ -112,7 +112,7 @@ export function ChatViaje({ viajeId, destino, viajeCerrado, mensajesIniciales }:
 
   const respondiendo = status === "submitted" || status === "streaming";
   const actividad = actividadDelAsistente(status, messages.at(-1));
-  const mensajesVisibles = messages.filter((mensaje) => textoDe(mensaje) !== "");
+  const mensajesVisibles = messages.filter((mensaje) => textoVisible(mensaje) !== "");
 
   return (
     <section aria-label="Chat del viaje" className="flex flex-col gap-4">
@@ -132,7 +132,7 @@ export function ChatViaje({ viajeId, destino, viajeCerrado, mensajesIniciales }:
         className="flex flex-col gap-3"
       >
         {mensajesVisibles.map((mensaje) => (
-          <GloboMensaje key={mensaje.id} rol={mensaje.role === "user" ? "user" : "assistant"} texto={textoDe(mensaje)} />
+          <GloboMensaje key={mensaje.id} rol={mensaje.role === "user" ? "user" : "assistant"} texto={textoVisible(mensaje)} />
         ))}
         {actividad && <IndicadorActividad etiqueta={actividad} />}
       </div>

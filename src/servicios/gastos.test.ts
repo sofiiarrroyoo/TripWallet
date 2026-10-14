@@ -10,7 +10,7 @@ import type { Gasto } from "@/tipos/gasto";
 import type { Viaje } from "@/tipos/viaje";
 import { obtenerCategoriaPorNombre } from "./categorias";
 import { convertir } from "./cotizaciones";
-import { eliminarGasto, registrarGasto } from "./gastos";
+import { eliminarGasto, eliminarUltimoGasto, registrarGasto } from "./gastos";
 import { obtenerViaje } from "./viajes";
 
 vi.mock("@/repositorios/gastos");
@@ -213,5 +213,60 @@ describe("eliminarGasto", () => {
     await expect(eliminarGasto("ajeno", ID_GASTO)).rejects.toMatchObject({ codigo: "VIAJE_NO_ENCONTRADO" });
 
     expect(repositorio.eliminarGasto).not.toHaveBeenCalled();
+  });
+});
+
+describe("eliminarUltimoGasto", () => {
+  const ultimo: Gasto = {
+    id: ID_GASTO,
+    viajeId: "viaje-1",
+    montoOriginal: 15000,
+    monedaOriginal: "CLP",
+    montoConvertido: 21750,
+    cotizacion: 1.45,
+    fechaCotizacion: HOY,
+    categoriaId: "c-1",
+    descripcion: "Cena",
+    fechaGasto: HOY,
+    creadoEn: "2026-10-14T21:00:00Z",
+  };
+
+  beforeEach(() => {
+    vi.mocked(repositorio.obtenerUltimoGasto).mockResolvedValue(ultimo);
+  });
+
+  it("borra el gasto más reciente y devuelve lo necesario para confirmarlo", async () => {
+    const eliminado = await eliminarUltimoGasto("viaje-1");
+
+    expect(repositorio.eliminarGasto).toHaveBeenCalledWith("viaje-1", ID_GASTO);
+    expect(eliminado).toEqual({
+      id: ID_GASTO,
+      descripcion: "Cena",
+      fechaGasto: HOY,
+      montoOriginal: 15000,
+      monedaOriginal: "CLP",
+      montoConvertido: 21750,
+      monedaBase: "ARS",
+    });
+  });
+
+  it("lanza ErrorNoEncontrado si el viaje no tiene gastos", async () => {
+    vi.mocked(repositorio.obtenerUltimoGasto).mockResolvedValue(null);
+
+    await expect(eliminarUltimoGasto("viaje-1")).rejects.toMatchObject({ codigo: "GASTO_NO_ENCONTRADO" });
+    expect(repositorio.eliminarGasto).not.toHaveBeenCalled();
+  });
+
+  it("no borra nada si el viaje está cerrado", async () => {
+    vi.mocked(obtenerViaje).mockResolvedValue({ ...viaje, estado: "cerrado" });
+
+    await expect(eliminarUltimoGasto("viaje-1")).rejects.toBeInstanceOf(ErrorViajeCerrado);
+    expect(repositorio.obtenerUltimoGasto).not.toHaveBeenCalled();
+  });
+
+  it("lanza ErrorNoEncontrado si el gasto ya no estaba cuando se quiso borrar", async () => {
+    vi.mocked(repositorio.eliminarGasto).mockResolvedValue(false);
+
+    await expect(eliminarUltimoGasto("viaje-1")).rejects.toMatchObject({ codigo: "GASTO_NO_ENCONTRADO" });
   });
 });

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ErrorViajeCerrado } from "@/errores";
-import { crearGasto, eliminarGasto } from "./gastos";
+import { crearGasto, eliminarGasto, obtenerUltimoGasto } from "./gastos";
 import { crearClienteSupabase } from "./supabase/clienteServidor";
 
 vi.mock("./supabase/clienteServidor", () => ({ crearClienteSupabase: vi.fn() }));
@@ -14,7 +14,10 @@ function consultaFalsa(resultado: Resultado) {
     delete: vi.fn(() => consulta),
     select: vi.fn(() => consulta),
     eq: vi.fn(() => consulta),
+    order: vi.fn(() => consulta),
+    limit: vi.fn(() => consulta),
     single: vi.fn(async () => resultado),
+    maybeSingle: vi.fn(async () => resultado),
     then: (alResolver: (valor: Resultado) => unknown) => Promise.resolve(resultado).then(alResolver),
   };
   return consulta;
@@ -103,6 +106,32 @@ describe("crearGasto", () => {
     usarConsulta({ data: null, error });
 
     await expect(crearGasto(nuevoGasto)).rejects.toBe(error);
+  });
+});
+
+describe("obtenerUltimoGasto", () => {
+  it("pide el más reciente del viaje", async () => {
+    const { consulta } = usarConsulta({ data: fila, error: null });
+
+    const gasto = await obtenerUltimoGasto("viaje-1");
+
+    expect(consulta.eq).toHaveBeenCalledWith("viaje_id", "viaje-1");
+    expect(consulta.order).toHaveBeenCalledWith("creado_en", { ascending: false });
+    expect(consulta.limit).toHaveBeenCalledWith(1);
+    expect(gasto).toMatchObject({ id: "g-1", montoOriginal: 15000, categoriaId: "c-1" });
+  });
+
+  it("devuelve null si el viaje no tiene gastos", async () => {
+    usarConsulta({ data: null, error: null });
+
+    await expect(obtenerUltimoGasto("viaje-1")).resolves.toBeNull();
+  });
+
+  it("propaga el error de Supabase", async () => {
+    const error = new Error("falla de la base");
+    usarConsulta({ data: null, error });
+
+    await expect(obtenerUltimoGasto("viaje-1")).rejects.toBe(error);
   });
 });
 
