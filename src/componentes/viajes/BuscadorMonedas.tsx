@@ -131,7 +131,7 @@ export function BuscadorMonedas({ id, ref, monedas, valor, onCambio, invalido, d
                 onMouseDown={(evento) => evento.preventDefault()}
                 onMouseMove={() => setIndiceActivo(indice)}
                 onClick={() => elegir(moneda)}
-                className="flex cursor-pointer items-baseline gap-3 rounded-sm px-3 py-2.5 data-[activa=true]:bg-muted"
+                className="flex cursor-pointer items-baseline gap-3 rounded-sm px-3 py-2.5 data-[activa=true]:bg-accent/50"
               >
                 <span className="w-10 shrink-0 font-medium">{moneda.codigo}</span>
                 <span className="flex-1">{moneda.nombre}</span>

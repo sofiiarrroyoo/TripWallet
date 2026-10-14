@@ -23,7 +23,7 @@ export default function LayoutAutenticacion({ children }: LayoutProps<"/">) {
         aria-label="Cómo funciona TripWallet"
         className="lg:col-span-7 lg:pt-[12vh]"
       >
-        <div className="escenario flex h-full min-h-[34rem] flex-col justify-start bg-escenario px-4 pt-20 pb-12 sm:px-8 lg:px-14 lg:pt-32">
+        <div className="escenario corte-diagonal flex h-full min-h-[34rem] flex-col justify-start bg-escenario px-4 pt-20 pb-12 sm:px-8 lg:px-14 lg:pt-32">
           <EjemploChat />
         </div>
       </aside>

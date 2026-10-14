@@ -2,6 +2,7 @@
 
 import { RotateCw } from "lucide-react";
 import { useEffect } from "react";
+import { MARGENES_PAGINA } from "@/componentes/pagina/Pagina";
 import { Button } from "@/componentes/ui/button";
 
 // En producción Next no manda al navegador el mensaje de un error del servidor (puede tener datos internos),
@@ -12,7 +13,7 @@ export default function ErrorPrivado({ error, retry }: { error: Error & { digest
   }, [error]);
 
   return (
-    <section role="alert" className="flex max-w-2xl flex-col gap-6">
+    <section role="alert" className={`flex max-w-2xl flex-col gap-6 pt-[8vh] ${MARGENES_PAGINA}`}>
       <div className="flex flex-col gap-3">
         <h1 className="text-3xl font-semibold tracking-tight">No pudimos cargar esta página</h1>
         <p className="text-lg">Puede ser un problema de conexión o algo de nuestro lado. Probá de nuevo.</p>
