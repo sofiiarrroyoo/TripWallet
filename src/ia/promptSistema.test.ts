@@ -58,10 +58,21 @@ describe("construirPromptSistema", () => {
     expect(prompt()).toMatch(/texto plano, sin Markdown/);
   });
 
-  it("le prohíbe al modelo inventar números y aclara que todavía no registra gastos", () => {
+  it("le prohíbe calcular o inventar los números del viaje", () => {
     const texto = prompt();
 
-    expect(texto).toMatch(/Nunca inventes cotizaciones/);
-    expect(texto).toMatch(/Todavía no podés registrar gastos/);
+    expect(texto).toMatch(/nunca los calcules ni los inventes/);
+    expect(texto).toMatch(/ni inventes cotizaciones/);
+  });
+
+  it("le permite dar precios orientativos de un lugar, aclarando que son una estimación", () => {
+    expect(prompt()).toMatch(/precios orientativos de un lugar.*rango aproximado.*estimación/);
+  });
+
+  it("aclara que todavía no guarda datos y que no prometa recordar nada", () => {
+    const texto = prompt();
+
+    expect(texto).toMatch(/Todavía no podés guardar datos desde el chat/);
+    expect(texto).toMatch(/No prometas recordar ni anotar nada/);
   });
 });
