@@ -1,6 +1,11 @@
 export const RUTA_INGRESAR = "/ingresar";
 export const RUTA_REGISTRO = "/registro";
 export const RUTA_INICIO_PRIVADO = "/viajes";
+export const RUTA_NUEVO_VIAJE = "/viajes/nuevo";
+
+export function rutaViaje(id: string): string {
+  return `/viajes/${encodeURIComponent(id)}`;
+}
 
 const RUTAS_DE_AUTENTICACION = [RUTA_INGRESAR, RUTA_REGISTRO];
 

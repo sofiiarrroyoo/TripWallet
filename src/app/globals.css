@@ -123,18 +123,22 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
-/* Panel menta de las pantallas de autenticación: esquina superior izquierda cortada en diagonal, que se abre
-   desde la derecha al cargar. */
-.escenario {
+/* Campos menta (panel de autenticación y encabezados de la app): esquina superior izquierda cortada en
+   diagonal. En la autenticación además se abre desde la derecha al cargar. */
+.corte-diagonal {
   --corte: 4.5rem;
   clip-path: polygon(var(--corte) 0, 100% 0, 100% 100%, 0 100%, 0 var(--corte));
-  animation: abrir-escenario 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @media (min-width: 64rem) {
-  .escenario {
+  .corte-diagonal {
     --corte: 6rem;
   }
+}
+
+/* Se combina con .corte-diagonal; solo lo usa el panel de autenticación, que es el momento fuerte. */
+.escenario {
+  animation: abrir-escenario 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {

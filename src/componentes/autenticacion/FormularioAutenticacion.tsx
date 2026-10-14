@@ -15,10 +15,14 @@ import { RUTA_INGRESAR, RUTA_INICIO_PRIVADO } from "@/lib/rutas";
 import { esquemaInicioSesion, esquemaRegistro } from "@/validaciones/autenticacion";
 import { detallesDeValidacion } from "@/validaciones/validar";
 import { CampoContrasena } from "./CampoContrasena";
-import { MensajeErrorCampo } from "./MensajeErrorCampo";
-import { CAMPOS, erroresPorCampo, type Campo, type ErroresCampos } from "./erroresPorCampo";
+import { MensajeErrorCampo } from "@/componentes/formularios/MensajeErrorCampo";
+import { erroresPorCampo } from "@/componentes/formularios/erroresPorCampo";
 
 export type ModoAutenticacion = "registro" | "ingreso";
+
+const CAMPOS = ["email", "contrasena"] as const;
+type Campo = (typeof CAMPOS)[number];
+type ErroresCampos = Partial<Record<Campo, string>>;
 
 const CONFIGURACION = {
   registro: {
@@ -55,7 +59,7 @@ export function FormularioAutenticacion({ modo }: { modo: ModoAutenticacion }) {
   }
 
   function mostrarErrores(detalles: DetalleValidacion[]) {
-    const { campos, otros } = erroresPorCampo(detalles);
+    const { campos, otros } = erroresPorCampo(detalles, CAMPOS);
     // flushSync pinta los errores antes de mover el foco: así el lector de pantalla lee el campo ya marcado
     // como inválido y con su mensaje.
     flushSync(() => {
@@ -96,8 +100,9 @@ export function FormularioAutenticacion({ modo }: { modo: ModoAutenticacion }) {
     else setErrorGeneral(resultado.error);
   }
 
+  // post: si el JavaScript no llegara a cargar, el envío nativo del formulario no deja los datos en la URL.
   return (
-    <form noValidate onSubmit={enviar} className="flex flex-col gap-6">
+    <form method="post" noValidate onSubmit={enviar} className="flex flex-col gap-6">
       {errorGeneral && <AlertaError error={errorGeneral} />}
 
       <div className="flex flex-col gap-2">

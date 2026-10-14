@@ -5,7 +5,7 @@ import { useState, type KeyboardEvent, type Ref } from "react";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
 import { Label } from "@/componentes/ui/label";
-import { MensajeErrorCampo } from "./MensajeErrorCampo";
+import { MensajeErrorCampo } from "@/componentes/formularios/MensajeErrorCampo";
 
 type Props = {
   ref: Ref<HTMLInputElement>;
