@@ -6,7 +6,8 @@ const codigoMoneda = z.string().regex(/^[A-Z]{3}$/);
 // Unidades de cada moneda por una unidad de la moneda base de la cotización.
 export const esquemaTasas = z.record(codigoMoneda, z.number().positive());
 
-const monedaIngresada = (mensaje: string) =>
+// Código de moneda escrito por una persona o por el bot: se recorta y se pasa a mayúsculas antes de validarlo.
+export const monedaIngresada = (mensaje: string) =>
   z
     .string(mensaje)
     .trim()

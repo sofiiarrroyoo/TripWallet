@@ -1,3 +1,4 @@
+import { fechaIsoEn } from "@/lib/fechas";
 import { formatearMonto, formatearRangoFechas } from "@/lib/formatos";
 import type { Viaje } from "@/tipos/viaje";
 
@@ -7,16 +8,9 @@ type ContextoPrompt = {
   zonaHoraria: string;
 };
 
-// Fecha de hoy en la zona horaria del usuario: cerca de la medianoche, la del servidor (UTC) ya puede ser otro día.
 function describirHoy(ahora: Date, zonaHoraria: string): string {
   const enPalabras = new Intl.DateTimeFormat("es-AR", { dateStyle: "full", timeZone: zonaHoraria }).format(ahora);
-  const iso = new Intl.DateTimeFormat("en-CA", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    timeZone: zonaHoraria,
-  }).format(ahora);
-  return `${enPalabras} (${iso}), zona horaria ${zonaHoraria}`;
+  return `${enPalabras} (${fechaIsoEn(ahora, zonaHoraria)}), zona horaria ${zonaHoraria}`;
 }
 
 function describirViaje({ viaje }: ContextoPrompt): string[] {

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { MONTO_MAXIMO } from "@/lib/numeros";
+import { MONTO_MAXIMO, tieneHastaDosDecimales } from "@/lib/numeros";
 
 function textoObligatorio(mensajeVacio: string, nombreCampo: string) {
   return z
@@ -7,10 +7,6 @@ function textoObligatorio(mensajeVacio: string, nombreCampo: string) {
     .trim()
     .min(1, mensajeVacio)
     .max(100, `${nombreCampo} puede tener hasta 100 caracteres.`);
-}
-
-function tieneHastaDosDecimales(numero: number): boolean {
-  return /^\d+(\.\d{1,2})?$/.test(String(numero));
 }
 
 export const esquemaCrearViaje = z

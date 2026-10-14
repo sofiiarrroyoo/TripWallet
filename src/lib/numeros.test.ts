@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { redondearADiezDecimales, redondearADosDecimales } from "./numeros";
+import { redondearADiezDecimales, redondearADosDecimales, tieneHastaDosDecimales } from "./numeros";
+
+describe("tieneHastaDosDecimales", () => {
+  it.each([1, 15000, 1500.5, 0.99, 12.34])("acepta %s", (numero) => {
+    expect(tieneHastaDosDecimales(numero)).toBe(true);
+  });
+
+  it.each([10.555, 0.001, 1e-7])("rechaza %s", (numero) => {
+    expect(tieneHastaDosDecimales(numero)).toBe(false);
+  });
+});
 
 describe("redondearADosDecimales", () => {
   it.each([
