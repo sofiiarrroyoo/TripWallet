@@ -15,8 +15,8 @@ import { RUTA_INGRESAR, RUTA_INICIO_PRIVADO } from "@/lib/rutas";
 import { esquemaInicioSesion, esquemaRegistro } from "@/validaciones/autenticacion";
 import { detallesDeValidacion } from "@/validaciones/validar";
 import { CampoContrasena } from "./CampoContrasena";
-import { MensajeErrorCampo } from "./MensajeErrorCampo";
-import { erroresPorCampo } from "./erroresPorCampo";
+import { MensajeErrorCampo } from "@/componentes/formularios/MensajeErrorCampo";
+import { erroresPorCampo } from "@/componentes/formularios/erroresPorCampo";
 
 export type ModoAutenticacion = "registro" | "ingreso";
 
@@ -100,8 +100,9 @@ export function FormularioAutenticacion({ modo }: { modo: ModoAutenticacion }) {
     else setErrorGeneral(resultado.error);
   }
 
+  // post: si el JavaScript no llegara a cargar, el envío nativo del formulario no deja los datos en la URL.
   return (
-    <form noValidate onSubmit={enviar} className="flex flex-col gap-6">
+    <form method="post" noValidate onSubmit={enviar} className="flex flex-col gap-6">
       {errorGeneral && <AlertaError error={errorGeneral} />}
 
       <div className="flex flex-col gap-2">

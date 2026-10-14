@@ -62,16 +62,23 @@ export function BuscadorMonedas({ id, ref, monedas, valor, onCambio, invalido, d
     if (valor) onCambio("");
   }
 
+  // Teclas del patrón combobox de WAI-ARIA. Inicio y Fin no se tocan: en un input editable mueven el cursor.
   function manejarTecla(evento: KeyboardEvent<HTMLInputElement>) {
     switch (evento.key) {
       case "ArrowDown":
         evento.preventDefault();
-        if (!abierto) abrir();
+        if (!abierto && evento.altKey) setAbierto(true);
+        else if (!abierto) abrir();
         else setIndiceActivo((indice) => Math.min(indice + 1, opciones.length - 1));
         break;
       case "ArrowUp":
         evento.preventDefault();
-        if (abierto) setIndiceActivo((indice) => Math.max(indice - 1, 0));
+        if (!abierto) {
+          setAbierto(true);
+          setIndiceActivo(opciones.length - 1);
+        } else {
+          setIndiceActivo((indice) => Math.max(indice - 1, 0));
+        }
         break;
       case "Enter":
         // Con la lista abierta, Enter elige la opción en vez de enviar el formulario.
@@ -81,8 +88,13 @@ export function BuscadorMonedas({ id, ref, monedas, valor, onCambio, invalido, d
         }
         break;
       case "Escape":
+        // Primer Escape cierra la lista; con la lista cerrada, borra lo escrito.
         if (abierto) {
           evento.preventDefault();
+          setAbierto(false);
+        } else if (texto) {
+          evento.preventDefault();
+          escribir("");
           setAbierto(false);
         }
         break;

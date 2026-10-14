@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { flushSync } from "react-dom";
 import { z } from "zod";
-import { erroresPorCampo } from "@/componentes/autenticacion/erroresPorCampo";
-import { MensajeErrorCampo } from "@/componentes/autenticacion/MensajeErrorCampo";
+import { erroresPorCampo } from "@/componentes/formularios/erroresPorCampo";
+import { MensajeErrorCampo } from "@/componentes/formularios/MensajeErrorCampo";
 import { Alert, AlertDescription } from "@/componentes/ui/alert";
 import { Button } from "@/componentes/ui/button";
 import { Input } from "@/componentes/ui/input";
@@ -103,8 +103,9 @@ export function FormularioNuevoViaje({ monedas }: { monedas: Moneda[] }) {
     else setErrorGeneral(resultado.error);
   }
 
+  // post: si el JavaScript no llegara a cargar, el envío nativo del formulario no deja los datos en la URL.
   return (
-    <form noValidate onSubmit={enviar} className="flex flex-col gap-6">
+    <form method="post" noValidate onSubmit={enviar} className="flex flex-col gap-6">
       {errorGeneral && (
         <Alert
           variant="destructive"

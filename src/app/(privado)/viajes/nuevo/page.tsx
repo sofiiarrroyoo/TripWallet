@@ -1,29 +1,13 @@
 import type { Metadata } from "next";
 import { CLASES_TITULO_PAGINA, CuerpoPagina, EncabezadoPagina, EnlaceVolver } from "@/componentes/pagina/Pagina";
-import { AvisoMonedasNoDisponibles } from "@/componentes/viajes/AvisoMonedasNoDisponibles";
 import { FormularioNuevoViaje } from "@/componentes/viajes/FormularioNuevoViaje";
-import { ErrorCotizacionNoDisponible } from "@/errores";
 import { RUTA_INICIO_PRIVADO } from "@/lib/rutas";
 import { listarMonedas } from "@/servicios/monedas";
-import type { Moneda } from "@/tipos/moneda";
 
 export const metadata: Metadata = { title: "Nuevo viaje" };
 
-type CargaMonedas = { ok: true; monedas: Moneda[] } | { ok: false; mensaje: string };
-
-// Si la API de cotizaciones no responde se muestra un aviso con reintento en lugar de la página de error
-// genérica: el resto de la pantalla sigue sirviendo para entender qué falta.
-async function cargarMonedas(): Promise<CargaMonedas> {
-  try {
-    return { ok: true, monedas: await listarMonedas() };
-  } catch (error) {
-    if (error instanceof ErrorCotizacionNoDisponible) return { ok: false, mensaje: error.message };
-    throw error;
-  }
-}
-
 export default async function PaginaNuevoViaje() {
-  const carga = await cargarMonedas();
+  const { monedas, fuente } = await listarMonedas();
 
   return (
     <section aria-labelledby="titulo-nuevo-viaje">
@@ -37,12 +21,14 @@ export default async function PaginaNuevoViaje() {
         </p>
       </EncabezadoPagina>
       <CuerpoPagina>
-        <div className="max-w-xl">
-          {carga.ok ? (
-            <FormularioNuevoViaje monedas={carga.monedas} />
-          ) : (
-            <AvisoMonedasNoDisponibles mensaje={carga.mensaje} />
+        <div className="flex max-w-xl flex-col gap-6">
+          {fuente === "respaldo" && (
+            <p role="status" className="rounded-md bg-muted p-4">
+              No pudimos consultar las cotizaciones, así que te mostramos la lista estándar de monedas. Podés crear
+              el viaje igual.
+            </p>
           )}
+          <FormularioNuevoViaje monedas={monedas} />
         </div>
       </CuerpoPagina>
     </section>
