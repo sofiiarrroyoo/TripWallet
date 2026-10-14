@@ -44,6 +44,9 @@ next-env.d.ts
 # IntelliJ
 .idea/
 
+# archivos de trabajo de la skill de diseño
+.taste-skill/
+
 #doc de trabajo local
 CLAUDE.md
 CONSIGNA.md
