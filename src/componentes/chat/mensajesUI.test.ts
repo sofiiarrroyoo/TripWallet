@@ -1,7 +1,14 @@
 import type { UIMessage } from "ai";
 import { describe, expect, it } from "vitest";
 import type { Mensaje } from "@/tipos/mensaje";
-import { aMensajeUI, textoDe } from "./mensajesUI";
+import {
+  aMensajeUI,
+  gastosRegistradosDe,
+  idsDeGastosEliminadosPorElChat,
+  preguntaPendienteDe,
+  textoDe,
+  textoVisible,
+} from "./mensajesUI";
 
 const mensaje: Mensaje = {
   id: "m-1",
@@ -15,28 +22,142 @@ const mensaje: Mensaje = {
   creadoEn: "2026-10-14T12:00:00Z",
 };
 
+const pregunta = { pregunta: "¿En qué pesos pagaste?", opciones: ["Argentinos", "Chilenos"] };
+
+const gasto = {
+  id: "g-1",
+  descripcion: "Cena",
+  categoria: "Comida y bebida",
+  fechaGasto: "2026-10-14",
+  montoOriginal: 15000,
+  monedaOriginal: "CLP",
+  montoConvertido: 21750,
+  monedaBase: "ARS",
+  cotizacion: 1.45,
+  fechaCotizacion: "2026-10-14",
+  fuente: "ExchangeRate-API (open.er-api.com)",
+  aviso: null,
+};
+
+function parteDeTool(nombre: string, input: unknown, output: unknown) {
+  return { type: `tool-${nombre}`, toolCallId: "t1", state: "output-available", input, output };
+}
+
+function asistente(...parts: unknown[]): UIMessage {
+  return { id: "a-1", role: "assistant", parts } as UIMessage;
+}
+
 describe("aMensajeUI", () => {
   it("conserva el id y el rol y arma una parte de texto", () => {
     expect(aMensajeUI(mensaje)).toEqual({ id: "m-1", role: "assistant", parts: [{ type: "text", text: "Hola!" }] });
+  });
+
+  it("vuelve a armar las tools guardadas como partes ya resueltas, antes del texto", () => {
+    const ui = aMensajeUI({
+      ...mensaje,
+      llamadasTools: [{ nombre: "registrar_gasto", argumentos: { monto: 15000 }, resultado: { ok: true } }],
+    });
+
+    expect(ui.parts).toEqual([
+      {
+        type: "tool-registrar_gasto",
+        toolCallId: "m-1-0",
+        state: "output-available",
+        input: { monto: 15000 },
+        output: { ok: true },
+      },
+      { type: "text", text: "Hola!" },
+    ]);
+  });
+
+  it("no agrega una parte de texto vacía cuando la respuesta fue solo una tool", () => {
+    const ui = aMensajeUI({
+      ...mensaje,
+      contenido: "",
+      llamadasTools: [{ nombre: "pedir_datos", argumentos: pregunta, resultado: { ok: true } }],
+    });
+
+    expect(ui.parts).toHaveLength(1);
   });
 });
 
 describe("textoDe", () => {
   it("junta las partes de texto e ignora las demás", () => {
-    const ui = {
-      id: "m-2",
-      role: "assistant",
-      parts: [
-        { type: "text", text: "Hola" },
-        { type: "tool-convertir_moneda", toolCallId: "t1", state: "input-available", input: {} },
-        { type: "text", text: " mundo" },
-      ],
-    } as UIMessage;
+    const ui = asistente(
+      { type: "text", text: "Hola" },
+      parteDeTool("convertir_moneda", {}, {}),
+      { type: "text", text: " mundo" },
+    );
 
     expect(textoDe(ui)).toBe("Hola mundo");
   });
 
   it("devuelve vacío si no hay texto", () => {
-    expect(textoDe({ id: "m-3", role: "assistant", parts: [] })).toBe("");
+    expect(textoDe(asistente())).toBe("");
+  });
+});
+
+describe("preguntaPendienteDe", () => {
+  it("devuelve la pregunta con sus opciones", () => {
+    expect(preguntaPendienteDe(asistente(parteDeTool("pedir_datos", pregunta, { ok: true })))).toEqual(pregunta);
+  });
+
+  it.each([
+    [asistente({ type: "text", text: "Hola" })],
+    [asistente(parteDeTool("pedir_datos", { pregunta: "¿?" }, { ok: true }))],
+    [asistente(parteDeTool("pedir_datos", { pregunta: "¿?", opciones: ["una sola"] }, { ok: true }))],
+  ])("devuelve null si no hay pregunta o está mal formada (%#)", (ui) => {
+    expect(preguntaPendienteDe(ui)).toBeNull();
+  });
+});
+
+describe("gastosRegistradosDe", () => {
+  it("devuelve los gastos registrados por el mensaje", () => {
+    const ui = asistente(parteDeTool("registrar_gasto", {}, { ok: true, gasto }), { type: "text", text: "Listo" });
+
+    expect(gastosRegistradosDe(ui)).toEqual([gasto]);
+  });
+
+  it("ignora los registros que fallaron, las otras tools y las partes mal formadas", () => {
+    const ui = asistente(
+      parteDeTool("registrar_gasto", {}, { ok: false, codigo: "VIAJE_CERRADO", mensaje: "cerrado" }),
+      parteDeTool("convertir_moneda", {}, { ok: true, gasto }),
+      parteDeTool("registrar_gasto", {}, { ok: true, gasto: { id: "g-2" } }),
+      { type: "tool-registrar_gasto", toolCallId: "t2", state: "input-available", input: {} },
+    );
+
+    expect(gastosRegistradosDe(ui)).toEqual([]);
+  });
+});
+
+describe("idsDeGastosEliminadosPorElChat", () => {
+  it("junta los ids de los gastos que borró el bot en cualquier mensaje", () => {
+    const mensajes = [
+      asistente(parteDeTool("eliminar_gasto", {}, { ok: true, gasto: { id: "g-1", descripcion: "Cena" } })),
+      asistente(parteDeTool("eliminar_gasto", {}, { ok: false, codigo: "GASTO_NO_ENCONTRADO" })),
+      asistente(parteDeTool("eliminar_gasto", {}, { ok: true, gasto: { id: "g-3" } })),
+    ];
+
+    expect(idsDeGastosEliminadosPorElChat(mensajes)).toEqual(["g-1", "g-3"]);
+  });
+});
+
+describe("textoVisible", () => {
+  it("es el texto cuando no hay preguntas", () => {
+    expect(textoVisible(asistente({ type: "text", text: "Listo" }))).toBe("Listo");
+  });
+
+  it("muestra solo la pregunta cuando la respuesta fue una pregunta: las opciones son botones aparte", () => {
+    expect(textoVisible(asistente(parteDeTool("pedir_datos", pregunta, { ok: true })))).toBe("¿En qué pesos pagaste?");
+  });
+
+  it("junta el texto y la pregunta si hay ambos", () => {
+    const ui = asistente(parteDeTool("pedir_datos", pregunta, { ok: true }), { type: "text", text: "Necesito un dato." });
+
+    expect(textoVisible(ui)).toBe("Necesito un dato.\n\n¿En qué pesos pagaste?");
+  });
+
+  it("es vacío si la respuesta fue solo una tarjeta", () => {
+    expect(textoVisible(asistente(parteDeTool("registrar_gasto", {}, { ok: true, gasto })))).toBe("");
   });
 });

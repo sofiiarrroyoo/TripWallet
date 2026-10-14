@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatearMonto, formatearRangoFechas } from "./formatos";
+import { formatearCotizacion, formatearMonto, formatearRangoFechas } from "./formatos";
 
 // Intl usa espacios especiales (no separables) que no importan para estos tests.
 function normalizarEspacios(texto: string): string {
@@ -24,5 +24,17 @@ describe("formatearMonto", () => {
 
   it("respeta los decimales de cada moneda", () => {
     expect(normalizarEspacios(formatearMonto(15000, "CLP"))).toBe("CLP 15.000");
+  });
+});
+
+describe("formatearCotizacion", () => {
+  it.each([
+    [1.5529807135, "1,55298"],
+    [1450.5, "1.450,5"],
+    [1.45, "1,45"],
+    [0.0000238095, "0,0000238095"],
+    [1, "1"],
+  ])("formatea %s como %s", (cotizacion, esperado) => {
+    expect(normalizarEspacios(formatearCotizacion(cotizacion))).toBe(esperado);
   });
 });
