@@ -1,12 +1,8 @@
+import { normalizarParaBuscar as normalizar } from "@/lib/texto";
 import type { Moneda } from "@/tipos/moneda";
 
 export function textoDeMoneda(moneda: Moneda): string {
   return `${moneda.codigo} · ${moneda.nombre}`;
-}
-
-// Sin tildes ni mayúsculas: "dolar" encuentra "Dólar estadounidense".
-function normalizar(texto: string): string {
-  return texto.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().trim();
 }
 
 // Menor es mejor; null = no coincide.
