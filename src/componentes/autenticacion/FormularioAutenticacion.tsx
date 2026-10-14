@@ -16,9 +16,13 @@ import { esquemaInicioSesion, esquemaRegistro } from "@/validaciones/autenticaci
 import { detallesDeValidacion } from "@/validaciones/validar";
 import { CampoContrasena } from "./CampoContrasena";
 import { MensajeErrorCampo } from "./MensajeErrorCampo";
-import { CAMPOS, erroresPorCampo, type Campo, type ErroresCampos } from "./erroresPorCampo";
+import { erroresPorCampo } from "./erroresPorCampo";
 
 export type ModoAutenticacion = "registro" | "ingreso";
+
+const CAMPOS = ["email", "contrasena"] as const;
+type Campo = (typeof CAMPOS)[number];
+type ErroresCampos = Partial<Record<Campo, string>>;
 
 const CONFIGURACION = {
   registro: {
@@ -55,7 +59,7 @@ export function FormularioAutenticacion({ modo }: { modo: ModoAutenticacion }) {
   }
 
   function mostrarErrores(detalles: DetalleValidacion[]) {
-    const { campos, otros } = erroresPorCampo(detalles);
+    const { campos, otros } = erroresPorCampo(detalles, CAMPOS);
     // flushSync pinta los errores antes de mover el foco: así el lector de pantalla lee el campo ya marcado
     // como inválido y con su mensaje.
     flushSync(() => {
