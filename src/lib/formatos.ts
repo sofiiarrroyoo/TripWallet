@@ -22,3 +22,8 @@ export function formatearMonto(monto: number, moneda: string): string {
     currencyDisplay: "code",
   }).format(monto);
 }
+
+// Una cotización puede ser 1.450,5 o 0,000023: se muestran 6 cifras significativas, no una cantidad fija de decimales.
+export function formatearCotizacion(cotizacion: number): string {
+  return new Intl.NumberFormat("es-AR", { maximumSignificantDigits: 6 }).format(cotizacion);
+}

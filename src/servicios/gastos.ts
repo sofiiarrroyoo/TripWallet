@@ -58,6 +58,16 @@ export async function registrarGasto(viajeId: string, datos: unknown, hoy: strin
   };
 }
 
+// De los gastos que mostró el chat, cuáles ya no existen (los borró "Deshacer" o el bot): la tarjeta pasa a decir
+// "Gasto eliminado". Los ids que no son uuid no pueden existir y se ignoran.
+export async function obtenerIdsGastosEliminados(viajeId: string, ids: string[]): Promise<string[]> {
+  const consultables = [...new Set(ids)].filter((id) => z.uuid().safeParse(id).success);
+  if (consultables.length === 0) return [];
+
+  const existentes = new Set(await repositorio.listarIdsExistentes(viajeId, consultables));
+  return consultables.filter((id) => !existentes.has(id));
+}
+
 // Lo que el bot necesita para confirmar qué se borró.
 export type GastoEliminado = Pick<
   GastoRegistrado,

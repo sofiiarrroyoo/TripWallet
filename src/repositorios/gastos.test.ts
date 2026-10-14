@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ErrorViajeCerrado } from "@/errores";
-import { crearGasto, eliminarGasto, obtenerUltimoGasto } from "./gastos";
+import { crearGasto, eliminarGasto, listarIdsExistentes, obtenerUltimoGasto } from "./gastos";
 import { crearClienteSupabase } from "./supabase/clienteServidor";
 
 vi.mock("./supabase/clienteServidor", () => ({ crearClienteSupabase: vi.fn() }));
@@ -14,6 +14,7 @@ function consultaFalsa(resultado: Resultado) {
     delete: vi.fn(() => consulta),
     select: vi.fn(() => consulta),
     eq: vi.fn(() => consulta),
+    in: vi.fn(() => consulta),
     order: vi.fn(() => consulta),
     limit: vi.fn(() => consulta),
     single: vi.fn(async () => resultado),
@@ -132,6 +133,30 @@ describe("obtenerUltimoGasto", () => {
     usarConsulta({ data: null, error });
 
     await expect(obtenerUltimoGasto("viaje-1")).rejects.toBe(error);
+  });
+});
+
+describe("listarIdsExistentes", () => {
+  it("devuelve los ids que siguen existiendo en el viaje", async () => {
+    const { consulta } = usarConsulta({ data: [{ id: "g-1" }], error: null });
+
+    await expect(listarIdsExistentes("viaje-1", ["g-1", "g-2"])).resolves.toEqual(["g-1"]);
+
+    expect(consulta.eq).toHaveBeenCalledWith("viaje_id", "viaje-1");
+    expect(consulta.in).toHaveBeenCalledWith("id", ["g-1", "g-2"]);
+  });
+
+  it("no consulta la base si no hay ids", async () => {
+    await expect(listarIdsExistentes("viaje-1", [])).resolves.toEqual([]);
+
+    expect(crearClienteSupabase).not.toHaveBeenCalled();
+  });
+
+  it("propaga el error de Supabase", async () => {
+    const error = new Error("falla de la base");
+    usarConsulta({ data: null, error });
+
+    await expect(listarIdsExistentes("viaje-1", ["g-1"])).rejects.toBe(error);
   });
 });
 

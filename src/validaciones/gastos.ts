@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { colapsarEspacios } from "@/lib/texto";
 import { MONTO_MAXIMO, tieneHastaDosDecimales } from "@/lib/numeros";
+import type { GastoRegistrado } from "@/tipos/gasto";
 import { nombreCategoria } from "./categorias";
 import { monedaIngresada } from "./cotizaciones";
 
@@ -30,3 +31,25 @@ export const esquemaRegistrarGasto = z.object({
 });
 
 export type DatosRegistrarGasto = z.infer<typeof esquemaRegistrarGasto>;
+
+// Lo que devuelve registrar_gasto, tal como queda guardado en mensajes.llamadas_tools. La interfaz y el servidor lo leen
+// con este esquema en vez de confiar en lo que haya guardado: una tarjeta vieja o mal formada no tiene que romper nada.
+export const esquemaGastoRegistrado: z.ZodType<GastoRegistrado> = z.object({
+  id: z.string(),
+  descripcion: z.string(),
+  categoria: z.string(),
+  fechaGasto: z.string(),
+  montoOriginal: z.number(),
+  monedaOriginal: z.string(),
+  montoConvertido: z.number(),
+  monedaBase: z.string(),
+  cotizacion: z.number(),
+  fechaCotizacion: z.string(),
+  fuente: z.string().nullable(),
+  aviso: z.string().nullable(),
+});
+
+export const esquemaResultadoRegistro = z.object({ ok: z.literal(true), gasto: esquemaGastoRegistrado });
+
+// De eliminar_gasto solo interesa saber qué gasto se borró.
+export const esquemaResultadoEliminacion = z.object({ ok: z.literal(true), gasto: z.object({ id: z.string() }) });

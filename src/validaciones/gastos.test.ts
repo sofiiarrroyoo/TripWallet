@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { esquemaRegistrarGasto } from "./gastos";
+import { esquemaResultadoEliminacion, esquemaResultadoRegistro, esquemaRegistrarGasto } from "./gastos";
 
 const gastoValido = { monto: 15000, moneda: "CLP", categoria: "Comida y bebida", descripcion: "Cena" };
 
@@ -62,5 +62,55 @@ describe("esquemaRegistrarGasto", () => {
 
   it("pide todos los datos obligatorios", () => {
     expect(camposConError({})).toEqual(["monto", "moneda", "categoria", "descripcion"]);
+  });
+});
+
+const gastoRegistrado = {
+  id: "g-1",
+  descripcion: "Cena",
+  categoria: "Comida y bebida",
+  fechaGasto: "2026-10-14",
+  montoOriginal: 15000,
+  monedaOriginal: "CLP",
+  montoConvertido: 21750,
+  monedaBase: "ARS",
+  cotizacion: 1.45,
+  fechaCotizacion: "2026-10-14",
+  fuente: "ExchangeRate-API (open.er-api.com)",
+  aviso: null,
+};
+
+describe("esquemaResultadoRegistro", () => {
+  it("lee un resultado exitoso de registrar_gasto", () => {
+    const resultado = esquemaResultadoRegistro.safeParse({ ok: true, gasto: gastoRegistrado });
+
+    expect(resultado.success && resultado.data.gasto.montoConvertido).toBe(21750);
+  });
+
+  it("acepta un gasto sin conversión (fuente null)", () => {
+    const resultado = esquemaResultadoRegistro.safeParse({ ok: true, gasto: { ...gastoRegistrado, fuente: null } });
+
+    expect(resultado.success).toBe(true);
+  });
+
+  it.each([
+    [{ ok: false, codigo: "VIAJE_CERRADO", mensaje: "cerrado" }],
+    [{ ok: true }],
+    [{ ok: true, gasto: { ...gastoRegistrado, montoConvertido: "21750" } }],
+    [null],
+  ])("rechaza %j", (resultado) => {
+    expect(esquemaResultadoRegistro.safeParse(resultado).success).toBe(false);
+  });
+});
+
+describe("esquemaResultadoEliminacion", () => {
+  it("lee el id del gasto eliminado", () => {
+    const resultado = esquemaResultadoEliminacion.safeParse({ ok: true, gasto: { id: "g-1", descripcion: "Cena" } });
+
+    expect(resultado.success && resultado.data.gasto.id).toBe("g-1");
+  });
+
+  it("rechaza una eliminación que falló", () => {
+    expect(esquemaResultadoEliminacion.safeParse({ ok: false, codigo: "GASTO_NO_ENCONTRADO" }).success).toBe(false);
   });
 });

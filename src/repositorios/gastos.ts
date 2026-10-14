@@ -79,6 +79,15 @@ export async function obtenerUltimoGasto(viajeId: string): Promise<Gasto | null>
   return data ? aGasto(data) : null;
 }
 
+// Cuáles de estos gastos siguen existiendo en el viaje (el RLS esconde los ajenos).
+export async function listarIdsExistentes(viajeId: string, ids: string[]): Promise<string[]> {
+  if (ids.length === 0) return [];
+  const supabase = await crearClienteSupabase();
+  const { data, error } = await supabase.from("gastos").select("id").eq("viaje_id", viajeId).in("id", ids);
+  if (error) throw error;
+  return data.map((fila) => fila.id);
+}
+
 // Devuelve false si no había ningún gasto con ese id en ese viaje (o no es del usuario): el RLS no deja ver los ajenos.
 export async function eliminarGasto(viajeId: string, gastoId: string): Promise<boolean> {
   const supabase = await crearClienteSupabase();

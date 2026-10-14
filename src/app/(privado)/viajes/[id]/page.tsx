@@ -31,7 +31,7 @@ function Dato({ etiqueta, valor }: { etiqueta: string; valor: string }) {
 
 export default async function PaginaViaje({ params }: PageProps<"/viajes/[id]">) {
   const { id } = await params;
-  const { viaje, mensajes } = await buscarChat(id);
+  const { viaje, mensajes, gastosEliminados } = await buscarChat(id);
 
   return (
     <section aria-labelledby="titulo-viaje">
@@ -63,6 +63,7 @@ export default async function PaginaViaje({ params }: PageProps<"/viajes/[id]">)
           destino={viaje.destino}
           viajeCerrado={viaje.estado === "cerrado"}
           mensajesIniciales={mensajes.map(aMensajeUI)}
+          gastosEliminados={gastosEliminados}
         />
       </CuerpoPagina>
     </section>

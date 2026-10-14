@@ -17,10 +17,12 @@ import * as repositorio from "@/repositorios/mensajes";
 import type { Mensaje } from "@/tipos/mensaje";
 import type { Viaje } from "@/tipos/viaje";
 import { esquemaPedidoChat } from "@/validaciones/chat";
+import { esquemaResultadoRegistro } from "@/validaciones/gastos";
 import { type LlamadaTool, esquemaLlamadasTools } from "@/validaciones/mensajes";
 import { NOMBRE_TOOL_PEDIR_DATOS, esquemaPedirDatos, textoDePedirDatos } from "@/validaciones/pedirDatos";
 import { validar } from "@/validaciones/validar";
 import { listarCategorias } from "./categorias";
+import { obtenerIdsGastosEliminados } from "./gastos";
 import { obtenerViaje } from "./viajes";
 
 export const MENSAJES_AL_MODELO = 20;
@@ -31,10 +33,29 @@ const MAXIMO_PASOS = 5;
 
 const UNA_HORA_MS = 60 * 60 * 1000;
 
-export async function cargarChat(viajeId: string): Promise<{ viaje: Viaje; mensajes: Mensaje[] }> {
+// Los gastos que mostró el chat con una tarjeta: se rearman desde las llamadas a tools guardadas en los mensajes.
+function idsDeGastosMostrados(mensajes: Mensaje[]): string[] {
+  return mensajes
+    .flatMap((mensaje) => mensaje.llamadasTools)
+    .filter((llamada) => llamada.nombre === "registrar_gasto")
+    .flatMap((llamada) => {
+      const resultado = esquemaResultadoRegistro.safeParse(llamada.resultado);
+      return resultado.success ? [resultado.data.gasto.id] : [];
+    });
+}
+
+export type ChatCargado = {
+  viaje: Viaje;
+  mensajes: Mensaje[];
+  // Gastos que tuvieron tarjeta y ya no existen: la tarjeta tiene que decir "Gasto eliminado".
+  gastosEliminados: string[];
+};
+
+export async function cargarChat(viajeId: string): Promise<ChatCargado> {
   const viaje = await obtenerViaje(viajeId);
   const mensajes = await repositorio.listarUltimosMensajes(viaje.id, MENSAJES_VISIBLES);
-  return { viaje, mensajes };
+  const gastosEliminados = await obtenerIdsGastosEliminados(viaje.id, idsDeGastosMostrados(mensajes));
+  return { viaje, mensajes, gastosEliminados };
 }
 
 // Cuenta los mensajes del usuario (en todos sus viajes) de la última hora. Si llegó al tope, calcula cuándo se

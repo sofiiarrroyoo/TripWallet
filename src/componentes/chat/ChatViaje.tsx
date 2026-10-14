@@ -8,16 +8,18 @@ import { Alert, AlertDescription } from "@/componentes/ui/alert";
 import { Button } from "@/componentes/ui/button";
 import { actividadDelAsistente } from "./actividadDelAsistente";
 import { EntradaChat } from "./EntradaChat";
-import { GloboMensaje } from "./GloboMensaje";
 import { IndicadorActividad } from "./IndicadorActividad";
+import { MensajeChat } from "./MensajeChat";
 import { mensajeDeError } from "./mensajeDeError";
-import { textoDe, textoVisible } from "./mensajesUI";
+import { gastosRegistradosDe, idsDeGastosEliminadosPorElChat, textoDe, textoVisible } from "./mensajesUI";
 
 type Props = {
   viajeId: string;
   destino: string;
   viajeCerrado: boolean;
   mensajesIniciales: UIMessage[];
+  // Gastos que tuvieron tarjeta y ya no existen (los calcula el servidor al cargar la página).
+  gastosEliminados: string[];
 };
 
 type Accion = "enviar" | "reintentar";
@@ -28,9 +30,12 @@ function fallaAntesDeGuardar(error: unknown): boolean {
   return APICallError.isInstance(error) || error instanceof TypeError;
 }
 
-export function ChatViaje({ viajeId, destino, viajeCerrado, mensajesIniciales }: Props) {
+export function ChatViaje({ viajeId, destino, viajeCerrado, mensajesIniciales, gastosEliminados }: Props) {
   const [texto, setTexto] = useState("");
   const [puedeReintentar, setPuedeReintentar] = useState(false);
+  const [eliminadosPorLaPersona, setEliminadosPorLaPersona] = useState<ReadonlySet<string>>(
+    () => new Set(gastosEliminados),
+  );
   const accionEnCurso = useRef<Accion>("enviar");
   const mensajesActuales = useRef<UIMessage[]>(mensajesIniciales);
   const alFallar = useRef<(error: Error) => void>(() => {});
@@ -93,14 +98,22 @@ export function ChatViaje({ viajeId, destino, viajeCerrado, mensajesIniciales }:
     if (messages.length > 0 && pegadoAlFinal.current) finDeLaPagina.current?.scrollIntoView({ block: "end" });
   }, [messages, status]);
 
-  function enviarTexto() {
-    const mensaje = texto.trim();
-    if (!mensaje) return;
+  function enviar(mensaje: string) {
     accionEnCurso.current = "enviar";
     pegadoAlFinal.current = true;
     setPuedeReintentar(false);
-    setTexto("");
     void sendMessage({ text: mensaje });
+  }
+
+  function enviarDelCuadro() {
+    const mensaje = texto.trim();
+    if (!mensaje) return;
+    setTexto("");
+    enviar(mensaje);
+  }
+
+  function elegirOpcion(opcion: string) {
+    if (!respondiendo) enviar(opcion);
   }
 
   function reintentar() {
@@ -110,9 +123,18 @@ export function ChatViaje({ viajeId, destino, viajeCerrado, mensajesIniciales }:
     void regenerate();
   }
 
+  function marcarGastoEliminado(gastoId: string) {
+    setEliminadosPorLaPersona((anteriores) => new Set(anteriores).add(gastoId));
+  }
+
   const respondiendo = status === "submitted" || status === "streaming";
   const actividad = actividadDelAsistente(status, messages.at(-1));
-  const mensajesVisibles = messages.filter((mensaje) => textoVisible(mensaje) !== "");
+  // Un mensaje se muestra si tiene texto, una pregunta o al menos una tarjeta de gasto.
+  const mensajesVisibles = messages.filter(
+    (mensaje) => textoVisible(mensaje) !== "" || gastosRegistradosDe(mensaje).length > 0,
+  );
+  // Un gasto está eliminado si se borró al cargar la página, con el botón "Deshacer" o porque el bot lo borró.
+  const gastosEliminadosAhora = new Set([...eliminadosPorLaPersona, ...idsDeGastosEliminadosPorElChat(messages)]);
 
   return (
     <section aria-label="Chat del viaje" className="flex flex-col gap-4">
@@ -131,8 +153,17 @@ export function ChatViaje({ viajeId, destino, viajeCerrado, mensajesIniciales }:
         aria-busy={respondiendo}
         className="flex flex-col gap-3"
       >
-        {mensajesVisibles.map((mensaje) => (
-          <GloboMensaje key={mensaje.id} rol={mensaje.role === "user" ? "user" : "assistant"} texto={textoVisible(mensaje)} />
+        {mensajesVisibles.map((mensaje, indice) => (
+          <MensajeChat
+            key={mensaje.id}
+            mensaje={mensaje}
+            viajeId={viajeId}
+            viajeCerrado={viajeCerrado}
+            gastosEliminados={gastosEliminadosAhora}
+            onGastoEliminado={marcarGastoEliminado}
+            opcionesActivas={indice === mensajesVisibles.length - 1 && !respondiendo}
+            onElegirOpcion={elegirOpcion}
+          />
         ))}
         {actividad && <IndicadorActividad etiqueta={actividad} />}
       </div>
@@ -159,7 +190,7 @@ export function ChatViaje({ viajeId, destino, viajeCerrado, mensajesIniciales }:
 
       <div className="sticky bottom-0 flex flex-col gap-2 bg-background pt-3 pb-4">
         {viajeCerrado && <p className="px-4 text-sm text-muted-foreground">Este viaje está cerrado: solo podés hacer consultas.</p>}
-        <EntradaChat texto={texto} onCambio={setTexto} onEnviar={enviarTexto} onDetener={stop} respondiendo={respondiendo} />
+        <EntradaChat texto={texto} onCambio={setTexto} onEnviar={enviarDelCuadro} onDetener={stop} respondiendo={respondiendo} />
       </div>
       <div ref={finDeLaPagina} />
     </section>

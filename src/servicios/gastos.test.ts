@@ -10,7 +10,7 @@ import type { Gasto } from "@/tipos/gasto";
 import type { Viaje } from "@/tipos/viaje";
 import { obtenerCategoriaPorNombre } from "./categorias";
 import { convertir } from "./cotizaciones";
-import { eliminarGasto, eliminarUltimoGasto, registrarGasto } from "./gastos";
+import { eliminarGasto, eliminarUltimoGasto, obtenerIdsGastosEliminados, registrarGasto } from "./gastos";
 import { obtenerViaje } from "./viajes";
 
 vi.mock("@/repositorios/gastos");
@@ -268,5 +268,34 @@ describe("eliminarUltimoGasto", () => {
     vi.mocked(repositorio.eliminarGasto).mockResolvedValue(false);
 
     await expect(eliminarUltimoGasto("viaje-1")).rejects.toMatchObject({ codigo: "GASTO_NO_ENCONTRADO" });
+  });
+});
+
+describe("obtenerIdsGastosEliminados", () => {
+  const ID_2 = "7c9e6679-7425-40de-944b-e07fc1f90ae7";
+
+  it("devuelve los gastos mostrados que ya no existen", async () => {
+    vi.mocked(repositorio.listarIdsExistentes).mockResolvedValue([ID_GASTO]);
+
+    await expect(obtenerIdsGastosEliminados("viaje-1", [ID_GASTO, ID_2])).resolves.toEqual([ID_2]);
+
+    expect(repositorio.listarIdsExistentes).toHaveBeenCalledWith("viaje-1", [ID_GASTO, ID_2]);
+  });
+
+  it("devuelve vacío si todos siguen existiendo", async () => {
+    vi.mocked(repositorio.listarIdsExistentes).mockResolvedValue([ID_GASTO, ID_2]);
+
+    await expect(obtenerIdsGastosEliminados("viaje-1", [ID_GASTO, ID_2])).resolves.toEqual([]);
+  });
+
+  it("no consulta la base si no hay ids, y no repite ni consulta los que no son uuid", async () => {
+    vi.mocked(repositorio.listarIdsExistentes).mockResolvedValue([]);
+
+    await expect(obtenerIdsGastosEliminados("viaje-1", [])).resolves.toEqual([]);
+    await expect(obtenerIdsGastosEliminados("viaje-1", ["no-es-uuid"])).resolves.toEqual([]);
+    expect(repositorio.listarIdsExistentes).not.toHaveBeenCalled();
+
+    await obtenerIdsGastosEliminados("viaje-1", [ID_GASTO, ID_GASTO, "no-es-uuid"]);
+    expect(repositorio.listarIdsExistentes).toHaveBeenCalledWith("viaje-1", [ID_GASTO]);
   });
 });

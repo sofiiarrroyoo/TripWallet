@@ -13,6 +13,9 @@ describe("esquemaPedirDatos", () => {
     [{ pregunta: "¿Qué pesos?", opciones: ["a", "b", "c", "d", "e", "f", "g"] }],
     [{ opciones: ["a", "b"] }],
     [{ pregunta: "¿Qué pesos?" }],
+    [{ pregunta: "¿Qué pesos?", opciones: ["Argentinos", ""] }],
+    [{ pregunta: "¿Qué pesos?", opciones: ["Argentinos", "a".repeat(101)] }],
+    [{ pregunta: "a".repeat(301), opciones: ["Argentinos", "Chilenos"] }],
   ])("rechaza %j", (datos) => {
     expect(esquemaPedirDatos.safeParse(datos).success).toBe(false);
   });

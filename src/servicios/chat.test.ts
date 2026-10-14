@@ -17,7 +17,7 @@ import type { LlamadaTool } from "@/validaciones/mensajes";
 import type { Viaje } from "@/tipos/viaje";
 import { LIMITE_MENSAJES_POR_HORA, cargarChat, responderMensaje } from "./chat";
 import { listarCategorias } from "./categorias";
-import { registrarGasto } from "./gastos";
+import { obtenerIdsGastosEliminados, registrarGasto } from "./gastos";
 import { obtenerViaje } from "./viajes";
 
 vi.mock("@/repositorios/mensajes");
@@ -144,6 +144,7 @@ beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => {});
   vi.mocked(obtenerViaje).mockResolvedValue(viaje);
   vi.mocked(listarCategorias).mockResolvedValue(categorias);
+  vi.mocked(obtenerIdsGastosEliminados).mockResolvedValue([]);
   vi.mocked(repositorio.listarFechasMensajesUsuarioDesde).mockResolvedValue([]);
   vi.mocked(repositorio.listarUltimosMensajes).mockResolvedValue([mensaje("user", "hola")]);
   vi.mocked(repositorio.crearMensaje).mockImplementation(async (nuevo) => mensaje(nuevo.rol, nuevo.contenido));
@@ -353,6 +354,57 @@ describe("cargarChat", () => {
 
     await expect(cargarChat("ajeno")).rejects.toBeInstanceOf(ErrorNoEncontrado);
     expect(repositorio.listarUltimosMensajes).not.toHaveBeenCalled();
+  });
+
+  describe("gastos eliminados", () => {
+    const gasto = (id: string) => ({
+      id,
+      descripcion: "Cena",
+      categoria: "Comida y bebida",
+      fechaGasto: "2026-10-14",
+      montoOriginal: 15000,
+      monedaOriginal: "CLP",
+      montoConvertido: 21750,
+      monedaBase: "ARS",
+      cotizacion: 1.45,
+      fechaCotizacion: "2026-10-14",
+      fuente: null,
+      aviso: null,
+    });
+
+    const conTarjeta = (id: string) =>
+      mensaje("assistant", "Listo", [
+        { nombre: "registrar_gasto", argumentos: { monto: 15000 }, resultado: { ok: true, gasto: gasto(id) } },
+      ]);
+
+    it("pregunta cuáles de los gastos que tuvieron tarjeta ya no existen", async () => {
+      vi.mocked(repositorio.listarUltimosMensajes).mockResolvedValue([
+        mensaje("user", "pagué la cena"),
+        conTarjeta("g-1"),
+        mensaje("user", "y el taxi"),
+        conTarjeta("g-2"),
+      ]);
+      vi.mocked(obtenerIdsGastosEliminados).mockResolvedValue(["g-1"]);
+
+      const chat = await cargarChat("viaje-1");
+
+      expect(obtenerIdsGastosEliminados).toHaveBeenCalledWith("viaje-1", ["g-1", "g-2"]);
+      expect(chat.gastosEliminados).toEqual(["g-1"]);
+    });
+
+    it("ignora las llamadas que fallaron, las de otras tools y las mal formadas", async () => {
+      vi.mocked(repositorio.listarUltimosMensajes).mockResolvedValue([
+        mensaje("assistant", "No pude", [
+          { nombre: "registrar_gasto", argumentos: {}, resultado: { ok: false, codigo: "VIAJE_CERRADO" } },
+          { nombre: "convertir_moneda", argumentos: {}, resultado: { ok: true } },
+          { nombre: "registrar_gasto", argumentos: {}, resultado: { ok: true, gasto: { id: "g-9" } } },
+        ]),
+      ]);
+
+      await cargarChat("viaje-1");
+
+      expect(obtenerIdsGastosEliminados).toHaveBeenCalledWith("viaje-1", []);
+    });
   });
 });
 
