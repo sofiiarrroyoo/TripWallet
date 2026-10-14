@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { llamarApi, sinDatos } from "./llamarApi";
+import { leerErrorApi, llamarApi, sinDatos } from "./llamarApi";
 
 function simularFetch(respuesta: Response | Error) {
   const fetchFalso = vi.fn(async () => {
@@ -92,5 +92,17 @@ describe("llamarApi", () => {
     const resultado = await llamarApi("/api/prueba", esquemaUsuario);
 
     expect(resultado).toMatchObject({ ok: false, error: { codigo: "ERROR_INTERNO" } });
+  });
+});
+
+describe("leerErrorApi", () => {
+  it("lee el cuerpo de error de la API", () => {
+    const cuerpo = JSON.stringify({ error: { codigo: "LIMITE_EXCEDIDO", mensaje: "Esperá un rato." } });
+
+    expect(leerErrorApi(cuerpo)).toEqual({ codigo: "LIMITE_EXCEDIDO", mensaje: "Esperá un rato." });
+  });
+
+  it.each(["no es json", "<html>502</html>", '{"error":"texto"}', "{}", ""])("devuelve null con %j", (texto) => {
+    expect(leerErrorApi(texto)).toBeNull();
   });
 });

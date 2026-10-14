@@ -54,6 +54,10 @@ describe("construirPromptSistema", () => {
     expect(texto).toContain(`zona horaria ${zonaHoraria}`);
   });
 
+  it("le pide texto plano porque la interfaz no renderiza Markdown", () => {
+    expect(prompt()).toMatch(/texto plano, sin Markdown/);
+  });
+
   it("le prohíbe al modelo inventar números y aclara que todavía no registra gastos", () => {
     const texto = prompt();
 
