@@ -1,7 +1,5 @@
 import { z } from "zod";
-
-// numeric(14, 2) en la base: hasta 12 dígitos enteros y 2 decimales.
-const PRESUPUESTO_MAXIMO = 999_999_999_999.99;
+import { MONTO_MAXIMO } from "@/lib/numeros";
 
 function textoObligatorio(mensajeVacio: string, nombreCampo: string) {
   return z
@@ -29,7 +27,7 @@ export const esquemaCrearViaje = z
     presupuestoTotal: z
       .number("El presupuesto tiene que ser un número.")
       .positive("El presupuesto tiene que ser mayor a cero.")
-      .max(PRESUPUESTO_MAXIMO, "El presupuesto es demasiado grande.")
+      .max(MONTO_MAXIMO, "El presupuesto es demasiado grande.")
       .refine(tieneHastaDosDecimales, "El presupuesto puede tener hasta 2 decimales.")
       .nullish()
       .transform((presupuesto) => presupuesto ?? null),
