@@ -3,6 +3,7 @@ import {
   ErrorApp,
   ErrorConflicto,
   ErrorCotizacionNoDisponible,
+  ErrorCredencialesInvalidas,
   ErrorLimiteExcedido,
   ErrorNoAutenticado,
   ErrorNoEncontrado,
@@ -19,6 +20,7 @@ const MENSAJE_GENERICO = "Ocurrió un error inesperado. Probá de nuevo en unos 
 function statusHttp(error: ErrorApp): number | null {
   if (error instanceof ErrorValidacion) return 400;
   if (error instanceof ErrorNoAutenticado) return 401;
+  if (error instanceof ErrorCredencialesInvalidas) return 401;
   if (error instanceof ErrorNoEncontrado) return 404;
   if (error instanceof ErrorConflicto) return 409;
   if (error instanceof ErrorLimiteExcedido) return 429;
