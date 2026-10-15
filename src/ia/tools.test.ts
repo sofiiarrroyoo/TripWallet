@@ -7,12 +7,15 @@ import {
   ErrorViajeCerrado,
 } from "@/errores";
 import { crearCategoria, listarCategorias } from "@/servicios/categorias";
+import { consultarGastos } from "@/servicios/consultaGastos";
 import { convertir } from "@/servicios/cotizaciones";
 import { eliminarUltimoGasto, registrarGasto } from "@/servicios/gastos";
 import type { GastoRegistrado } from "@/tipos/gasto";
+import type { ConsultaGastos } from "@/tipos/resumen";
 import { contextoDeTools, tools } from "./tools";
 
 vi.mock("@/servicios/categorias");
+vi.mock("@/servicios/consultaGastos");
 vi.mock("@/servicios/cotizaciones");
 vi.mock("@/servicios/gastos");
 
@@ -114,6 +117,65 @@ describe("registrar_gasto", () => {
       codigo: "ERROR_INTERNO",
       mensaje: "No pude completar la acción por un problema interno.",
     });
+  });
+});
+
+describe("consultar_gastos", () => {
+  const consulta: ConsultaGastos = {
+    monedaBase: "ARS",
+    filtro: { categoria: null, desde: null, hasta: null },
+    resumen: {
+      total: 36750,
+      cantidad: 1,
+      porCategoria: [{ categoria: "Comida y bebida", total: 36750, cantidad: 1, porcentajeDelTotal: 100 }],
+      porDia: [{ fecha: "2026-10-14", total: 36750, cantidad: 1 }],
+    },
+    gastos: [],
+    hayMasGastos: false,
+    presupuesto: null,
+    fuenteCotizaciones: "ExchangeRate-API (open.er-api.com)",
+  };
+
+  it("consulta el viaje del servidor con los filtros del bot y devuelve los números ya formateados", async () => {
+    vi.mocked(consultarGastos).mockResolvedValue(consulta);
+    const filtros = { categoria: "Comida y bebida", desde: "2026-10-14", hasta: "2026-10-14" };
+
+    const resultado = await tools.consultar_gastos.execute!(filtros, opciones);
+
+    expect(consultarGastos).toHaveBeenCalledWith("viaje-1", filtros);
+    expect(resultado).toMatchObject({ ok: true, consulta: { monedaBase: "ARS", cantidadDeGastos: 1 } });
+    expect((resultado as { consulta: { total: string } }).consulta.total.replace(/\s/g, " ")).toBe("ARS 36.750,00");
+  });
+
+  it("acepta una consulta sin filtros", async () => {
+    vi.mocked(consultarGastos).mockResolvedValue(consulta);
+
+    await tools.consultar_gastos.execute!({}, opciones);
+
+    expect(consultarGastos).toHaveBeenCalledWith("viaje-1", {});
+  });
+
+  it("si la categoría no existe, devuelve las que sí se pueden usar", async () => {
+    vi.mocked(consultarGastos).mockRejectedValue(new ErrorNoEncontrado("CATEGORIA"));
+    vi.mocked(listarCategorias).mockResolvedValue([{ id: "c-1", nombre: "Comida y bebida", esPorDefecto: true }]);
+
+    const resultado = await tools.consultar_gastos.execute!({ categoria: "Mascotas" }, opciones);
+
+    expect(resultado).toMatchObject({
+      ok: false,
+      codigo: "CATEGORIA_NO_ENCONTRADO",
+      categoriasDisponibles: ["Comida y bebida"],
+    });
+  });
+
+  it("devuelve la falla de validación si el rango está al revés", async () => {
+    vi.mocked(consultarGastos).mockRejectedValue(
+      new ErrorValidacion(undefined, [{ campo: "hasta", mensaje: "La fecha 'hasta' no puede ser anterior a 'desde'." }]),
+    );
+
+    const resultado = await tools.consultar_gastos.execute!({ desde: "2026-10-14", hasta: "2026-10-12" }, opciones);
+
+    expect(resultado).toMatchObject({ ok: false, codigo: "VALIDACION", detalles: [{ campo: "hasta" }] });
   });
 });
 
@@ -222,6 +284,7 @@ describe("contextoDeTools", () => {
   it("le da el viaje y la fecha de hoy a las tools que lo necesitan, y a ninguna otra", () => {
     expect(contextoDeTools(contexto)).toEqual({
       registrar_gasto: contexto,
+      consultar_gastos: contexto,
       convertir_moneda: contexto,
       eliminar_gasto: contexto,
     });

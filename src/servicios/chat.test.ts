@@ -12,17 +12,20 @@ import { obtenerModelo } from "@/integraciones/modeloLLM";
 import * as repositorio from "@/repositorios/mensajes";
 import type { Categoria } from "@/tipos/categoria";
 import type { GastoRegistrado } from "@/tipos/gasto";
+import type { ConsultaGastos } from "@/tipos/resumen";
 import type { Mensaje } from "@/tipos/mensaje";
 import type { LlamadaTool } from "@/validaciones/mensajes";
 import type { Viaje } from "@/tipos/viaje";
 import { LIMITE_MENSAJES_POR_HORA, cargarChat, responderMensaje } from "./chat";
 import { listarCategorias } from "./categorias";
+import { consultarGastos } from "./consultaGastos";
 import { obtenerIdsGastosEliminados, registrarGasto } from "./gastos";
 import { obtenerViaje } from "./viajes";
 
 vi.mock("@/repositorios/mensajes");
 vi.mock("./viajes");
 vi.mock("./categorias");
+vi.mock("./consultaGastos");
 vi.mock("./gastos");
 vi.mock("./cotizaciones");
 vi.mock("@/integraciones/modeloLLM", () => ({
@@ -498,6 +501,39 @@ describe("tools", () => {
     );
   });
 
+  it("el modelo consulta lo gastado, recibe los números ya calculados y responde con ellos", async () => {
+    const consulta: ConsultaGastos = {
+      monedaBase: "ARS",
+      filtro: { categoria: "Comida y bebida", desde: "2026-10-14", hasta: "2026-10-14" },
+      resumen: {
+        total: 21750,
+        cantidad: 1,
+        porCategoria: [{ categoria: "Comida y bebida", total: 21750, cantidad: 1, porcentajeDelTotal: 100 }],
+        porDia: [{ fecha: "2026-10-14", total: 21750, cantidad: 1 }],
+      },
+      gastos: [],
+      hayMasGastos: false,
+      presupuesto: null,
+      fuenteCotizaciones: "ExchangeRate-API (open.er-api.com)",
+    };
+    vi.mocked(consultarGastos).mockResolvedValue(consulta);
+    const filtros = { categoria: "Comida y bebida", desde: "2026-10-14", hasta: "2026-10-14" };
+    const modelo = modeloEnPasos(pasoConTool("consultar_gastos", filtros), pasoConTexto("Hoy gastaste ARS 21.750,00 en comida."));
+
+    await leerTodo(await responderMensaje("viaje-1", enviar("¿cuánto gasté en comida hoy?"), sinSenal()));
+
+    expect(consultarGastos).toHaveBeenCalledWith("viaje-1", filtros);
+    // El modelo vio el resultado de la tool antes de contestar: hubo un segundo paso con ese resultado en el prompt.
+    expect(modelo.doStreamCalls).toHaveLength(2);
+    expect(JSON.stringify(modelo.doStreamCalls[1]?.prompt)).toContain("fuenteCotizaciones");
+    expect(repositorio.crearMensaje).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        contenido: "Hoy gastaste ARS 21.750,00 en comida.",
+        llamadasTools: [expect.objectContaining({ nombre: "consultar_gastos", argumentos: filtros })],
+      }),
+    );
+  });
+
   it("si la tool falla, el modelo recibe la falla como resultado y la explica", async () => {
     vi.mocked(registrarGasto).mockRejectedValue(new ErrorViajeCerrado());
     modeloEnPasos(pasoConTool("registrar_gasto", entradaGasto), pasoConTexto("El viaje está cerrado, no puedo registrarlo."));
@@ -534,14 +570,21 @@ describe("tools", () => {
     );
   });
 
-  it("le ofrece al modelo las 5 tools y las categorías disponibles", async () => {
+  it("le ofrece al modelo las 6 tools y las categorías disponibles", async () => {
     const modelo = modeloEnPasos(pasoConTexto("ok"));
 
     await leerTodo(await responderMensaje("viaje-1", enviar("hola"), sinSenal()));
 
     const llamada = modelo.doStreamCalls[0];
     const nombres = JSON.stringify(llamada?.tools);
-    for (const tool of ["registrar_gasto", "convertir_moneda", "eliminar_gasto", "crear_categoria", "pedir_datos"]) {
+    for (const tool of [
+      "registrar_gasto",
+      "consultar_gastos",
+      "convertir_moneda",
+      "eliminar_gasto",
+      "crear_categoria",
+      "pedir_datos",
+    ]) {
       expect(nombres).toContain(tool);
     }
     expect(JSON.stringify(llamada?.prompt[0])).toContain("Comida y bebida, Transporte");

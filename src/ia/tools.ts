@@ -2,9 +2,11 @@ import { tool } from "ai";
 import { z } from "zod";
 import { type DetalleValidacion, ErrorApp, ErrorValidacion } from "@/errores";
 import { crearCategoria, listarCategorias } from "@/servicios/categorias";
+import { consultarGastos } from "@/servicios/consultaGastos";
 import { convertir } from "@/servicios/cotizaciones";
 import { eliminarUltimoGasto, registrarGasto } from "@/servicios/gastos";
 import { esquemaPedirDatos } from "@/validaciones/pedirDatos";
+import { presentarConsulta } from "./presentarConsulta";
 
 // Lo pone el servidor, no el modelo: la tool no tiene forma de trabajar sobre otro viaje.
 const esquemaContexto = z.object({
@@ -49,6 +51,14 @@ async function nombresDeCategorias(): Promise<string[] | undefined> {
   }
 }
 
+// Si la falla fue una categoría inexistente, el bot recibe también las que sí existen para elegir una o preguntar.
+async function conCategoriasSiFalta<Resultado extends { ok: boolean }>(
+  resultado: Resultado | ResultadoFallido,
+): Promise<Resultado | ResultadoFallido> {
+  if (resultado.ok || !("codigo" in resultado) || resultado.codigo !== "CATEGORIA_NO_ENCONTRADO") return resultado;
+  return { ...resultado, categoriasDisponibles: await nombresDeCategorias() };
+}
+
 export const tools = {
   registrar_gasto: tool({
     description:
@@ -63,13 +73,28 @@ export const tools = {
       fecha: z.string().optional().describe("Fecha del gasto en formato AAAA-MM-DD. Omitila si fue hoy."),
     }),
     contextSchema: esquemaContexto,
-    execute: async (entrada, { context }) => {
-      const resultado = await ejecutar(async () => ({
-        gasto: await registrarGasto(context.viajeId, entrada, context.hoy),
-      }));
-      if (resultado.ok || resultado.codigo !== "CATEGORIA_NO_ENCONTRADO") return resultado;
-      return { ...resultado, categoriasDisponibles: await nombresDeCategorias() };
-    },
+    execute: async (entrada, { context }) =>
+      conCategoriasSiFalta(
+        await ejecutar(async () => ({ gasto: await registrarGasto(context.viajeId, entrada, context.hoy) })),
+      ),
+  }),
+
+  consultar_gastos: tool({
+    description:
+      "Consulta lo gastado en el viaje: el total, por categoría, por día, el detalle de los gastos y, si el viaje tiene " +
+      "presupuesto, cuánto queda y qué porcentaje se gastó. Se puede acotar a una categoría y/o a un rango de fechas " +
+      "(para un solo día, desde y hasta iguales). Todos los números los calcula el sistema: respondé solo con los que " +
+      "trae el resultado, tal como vienen escritos, sin sumar ni recalcular.",
+    inputSchema: z.object({
+      categoria: z.string().optional().describe("Nombre exacto de una de las categorías disponibles. Omitila para no filtrar."),
+      desde: z.string().optional().describe("Primer día a incluir, en formato AAAA-MM-DD. Omitilo para no acotar el comienzo."),
+      hasta: z.string().optional().describe("Último día a incluir, en formato AAAA-MM-DD. Omitilo para no acotar el final."),
+    }),
+    contextSchema: esquemaContexto,
+    execute: async (entrada, { context }) =>
+      conCategoriasSiFalta(
+        await ejecutar(async () => ({ consulta: presentarConsulta(await consultarGastos(context.viajeId, entrada)) })),
+      ),
   }),
 
   convertir_moneda: tool({
@@ -124,5 +149,10 @@ export const tools = {
 
 // Las tools que necesitan saber en qué viaje trabajan.
 export function contextoDeTools(contexto: ContextoTools) {
-  return { registrar_gasto: contexto, convertir_moneda: contexto, eliminar_gasto: contexto };
+  return {
+    registrar_gasto: contexto,
+    consultar_gastos: contexto,
+    convertir_moneda: contexto,
+    eliminar_gasto: contexto,
+  };
 }

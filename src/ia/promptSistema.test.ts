@@ -99,6 +99,45 @@ describe("construirPromptSistema", () => {
     });
   });
 
+  describe("reglas para consultar lo gastado", () => {
+    it("le indica usar consultar_gastos y responder solo con los números del resultado, sin calcular", () => {
+      const texto = prompt();
+
+      expect(texto).toMatch(/llamá a consultar_gastos y respondé SOLO con los números del resultado/);
+      expect(texto).toMatch(/Nunca sumes, restes ni calcules porcentajes vos/);
+    });
+
+    it("le indica pasar las fechas relativas a desde y hasta con formato AAAA-MM-DD", () => {
+      expect(prompt()).toMatch(/"ayer".*AAAA-MM-DD.*desde y hasta/);
+    });
+
+    it("le indica decir cuánto queda del presupuesto, avisar si se excedió y no inventar uno", () => {
+      const texto = prompt();
+
+      expect(texto).toMatch(/cuánto queda y qué porcentaje se gastó/);
+      expect(texto).toMatch(/seExcedio es true, decilo con claridad/);
+      expect(texto).toMatch(/Si presupuesto es null.*no lo menciones ni inventes uno/);
+    });
+
+    it("le indica citar la cotización, su fecha y la fuente cuando hay gastos en otra moneda", () => {
+      expect(prompt()).toMatch(/cotización usada, su fecha y la fuente \(fuenteCotizaciones\)/);
+    });
+
+    it("le indica qué decir si no hay gastos o si el detalle está recortado", () => {
+      const texto = prompt();
+
+      expect(texto).toMatch(/sinGastos es true, decí que no hay gastos/);
+      expect(texto).toMatch(/detalleIncompleto no es null, aclaralo/);
+    });
+
+    it("incluye ejemplos de consultas", () => {
+      const texto = prompt();
+
+      expect(texto).toMatch(/cuánto llevo gastado.*consultar_gastos sin filtros/);
+      expect(texto).toMatch(/en comida ayer.*consultar_gastos con categoria "Comida y bebida"/);
+    });
+  });
+
   describe("reglas sobre números", () => {
     it("le prohíbe calcular o inventar los números del viaje y le indica usar convertir_moneda", () => {
       const texto = prompt();
@@ -115,8 +154,12 @@ describe("construirPromptSistema", () => {
     it("aclara lo que todavía no puede hacer y que no prometa recordar nada", () => {
       const texto = prompt();
 
-      expect(texto).toMatch(/Todavía no podés consultar lo gastado ni cerrar el viaje/);
+      expect(texto).toMatch(/Todavía no podés cerrar el viaje desde el chat/);
       expect(texto).toMatch(/No prometas recordar ni anotar nada por tu cuenta/);
+    });
+
+    it("ya no dice que no puede consultar lo gastado", () => {
+      expect(prompt()).not.toMatch(/Todavía no podés consultar/);
     });
   });
 });

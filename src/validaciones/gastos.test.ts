@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { esquemaResultadoEliminacion, esquemaResultadoRegistro, esquemaRegistrarGasto } from "./gastos";
+import {
+  esquemaConsultarGastos,
+  esquemaRegistrarGasto,
+  esquemaResultadoEliminacion,
+  esquemaResultadoRegistro,
+} from "./gastos";
 
 const gastoValido = { monto: 15000, moneda: "CLP", categoria: "Comida y bebida", descripcion: "Cena" };
 
@@ -112,5 +117,48 @@ describe("esquemaResultadoEliminacion", () => {
 
   it("rechaza una eliminación que falló", () => {
     expect(esquemaResultadoEliminacion.safeParse({ ok: false, codigo: "GASTO_NO_ENCONTRADO" }).success).toBe(false);
+  });
+});
+
+describe("esquemaConsultarGastos", () => {
+  it("acepta una consulta sin filtros", () => {
+    expect(esquemaConsultarGastos.parse({})).toEqual({ categoria: undefined, desde: undefined, hasta: undefined });
+  });
+
+  it("toma null como 'sin filtro'", () => {
+    const consulta = esquemaConsultarGastos.parse({ categoria: null, desde: null, hasta: null });
+
+    expect(consulta).toEqual({ categoria: undefined, desde: undefined, hasta: undefined });
+  });
+
+  it("normaliza el nombre de la categoría", () => {
+    expect(esquemaConsultarGastos.parse({ categoria: "  Comida   y bebida " }).categoria).toBe("Comida y bebida");
+  });
+
+  it("acepta un día, un rango y un rango abierto de un lado", () => {
+    expect(esquemaConsultarGastos.parse({ desde: "2026-10-14", hasta: "2026-10-14" })).toMatchObject({
+      desde: "2026-10-14",
+      hasta: "2026-10-14",
+    });
+    expect(esquemaConsultarGastos.parse({ desde: "2026-10-12", hasta: "2026-10-14" })).toBeDefined();
+    expect(esquemaConsultarGastos.parse({ desde: "2026-10-12" })).toMatchObject({ desde: "2026-10-12" });
+  });
+
+  it("rechaza un rango al revés", () => {
+    const resultado = esquemaConsultarGastos.safeParse({ desde: "2026-10-14", hasta: "2026-10-12" });
+
+    expect(!resultado.success && resultado.error.issues.map((issue) => issue.path.join("."))).toEqual(["hasta"]);
+  });
+
+  it.each([
+    [{ desde: "14/10/2026" }, "desde"],
+    [{ hasta: "ayer" }, "hasta"],
+    [{ desde: "2026-02-30" }, "desde"],
+    [{ categoria: "   " }, "categoria"],
+    [{ categoria: 42 }, "categoria"],
+  ])("rechaza %j", (datos, campo) => {
+    const resultado = esquemaConsultarGastos.safeParse(datos);
+
+    expect(!resultado.success && resultado.error.issues.map((issue) => issue.path.join("."))).toContain(campo);
   });
 });

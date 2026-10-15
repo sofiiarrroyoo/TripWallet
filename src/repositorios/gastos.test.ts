@@ -1,6 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ErrorViajeCerrado } from "@/errores";
-import { crearGasto, eliminarGasto, listarIdsExistentes, obtenerUltimoGasto } from "./gastos";
+import {
+  TAMANO_PAGINA_GASTOS,
+  crearGasto,
+  eliminarGasto,
+  listarGastosDelViaje,
+  listarIdsExistentes,
+  obtenerUltimoGasto,
+} from "./gastos";
 import { crearClienteSupabase } from "./supabase/clienteServidor";
 
 vi.mock("./supabase/clienteServidor", () => ({ crearClienteSupabase: vi.fn() }));
@@ -17,6 +24,7 @@ function consultaFalsa(resultado: Resultado) {
     in: vi.fn(() => consulta),
     order: vi.fn(() => consulta),
     limit: vi.fn(() => consulta),
+    range: vi.fn(() => consulta),
     single: vi.fn(async () => resultado),
     maybeSingle: vi.fn(async () => resultado),
     then: (alResolver: (valor: Resultado) => unknown) => Promise.resolve(resultado).then(alResolver),
@@ -181,5 +189,92 @@ describe("eliminarGasto", () => {
     usarConsulta({ data: null, error: { code: "P0001", message: "VIAJE_CERRADO" } });
 
     await expect(eliminarGasto("viaje-1", "g-1")).rejects.toBeInstanceOf(ErrorViajeCerrado);
+  });
+});
+
+describe("listarGastosDelViaje", () => {
+  const filaConCategoria = (id: string, categorias: { nombre: string } | null = { nombre: "Comida y bebida" }) => ({
+    id,
+    descripcion: "Cena",
+    fecha_gasto: "2026-10-14",
+    monto_original: 15000,
+    moneda_original: "CLP",
+    monto_convertido: 21750,
+    cotizacion: 1.45,
+    fecha_cotizacion: "2026-10-14",
+    creado_en: "2026-10-14T21:00:00Z",
+    categorias,
+  });
+
+  // Devuelve una página distinta en cada pedido, como hace la base cuando hay más filas que el tope.
+  function usarPaginas(paginas: unknown[][]) {
+    let pagina = 0;
+    const consulta = {
+      select: vi.fn(() => consulta),
+      eq: vi.fn(() => consulta),
+      order: vi.fn(() => consulta),
+      range: vi.fn(() => consulta),
+      then: (alResolver: (valor: Resultado) => unknown) =>
+        Promise.resolve({ data: paginas[pagina++] ?? [], error: null }).then(alResolver),
+    };
+    vi.mocked(crearClienteSupabase).mockResolvedValue({
+      from: vi.fn(() => consulta),
+    } as unknown as Awaited<ReturnType<typeof crearClienteSupabase>>);
+    return consulta;
+  }
+
+  it("devuelve los gastos con el nombre de su categoría, del más reciente al más viejo", async () => {
+    const consulta = usarPaginas([[filaConCategoria("g-1")]]);
+
+    const gastos = await listarGastosDelViaje("viaje-1");
+
+    expect(consulta.eq).toHaveBeenCalledWith("viaje_id", "viaje-1");
+    expect(consulta.order).toHaveBeenNthCalledWith(1, "fecha_gasto", { ascending: false });
+    expect(consulta.order).toHaveBeenNthCalledWith(2, "creado_en", { ascending: false });
+    expect(consulta.order).toHaveBeenNthCalledWith(3, "id", { ascending: true });
+    expect(gastos).toEqual([
+      {
+        id: "g-1",
+        descripcion: "Cena",
+        categoria: "Comida y bebida",
+        fechaGasto: "2026-10-14",
+        montoOriginal: 15000,
+        monedaOriginal: "CLP",
+        montoConvertido: 21750,
+        cotizacion: 1.45,
+        fechaCotizacion: "2026-10-14",
+        creadoEn: "2026-10-14T21:00:00Z",
+      },
+    ]);
+  });
+
+  it("no descarta un gasto cuya categoría no se puede leer: cambiaría los totales", async () => {
+    usarPaginas([[filaConCategoria("g-1", null)]]);
+
+    await expect(listarGastosDelViaje("viaje-1")).resolves.toMatchObject([{ id: "g-1", categoria: "Sin categoría" }]);
+  });
+
+  it("devuelve una lista vacía si el viaje no tiene gastos", async () => {
+    usarPaginas([[]]);
+
+    await expect(listarGastosDelViaje("viaje-1")).resolves.toEqual([]);
+  });
+
+  it("sigue pidiendo páginas mientras la anterior venga llena, para no perder gastos", async () => {
+    const paginaLlena = Array.from({ length: TAMANO_PAGINA_GASTOS }, (_, i) => filaConCategoria(`g-${i}`));
+    const consulta = usarPaginas([paginaLlena, [filaConCategoria("g-ultimo")]]);
+
+    const gastos = await listarGastosDelViaje("viaje-1");
+
+    expect(gastos).toHaveLength(TAMANO_PAGINA_GASTOS + 1);
+    expect(consulta.range).toHaveBeenNthCalledWith(1, 0, TAMANO_PAGINA_GASTOS - 1);
+    expect(consulta.range).toHaveBeenNthCalledWith(2, TAMANO_PAGINA_GASTOS, 2 * TAMANO_PAGINA_GASTOS - 1);
+  });
+
+  it("propaga el error de Supabase", async () => {
+    const error = new Error("falla de la base");
+    usarConsulta({ data: null, error });
+
+    await expect(listarGastosDelViaje("viaje-1")).rejects.toBe(error);
   });
 });
