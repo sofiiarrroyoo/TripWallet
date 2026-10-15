@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { Mensaje } from "@/tipos/mensaje";
 import {
   aMensajeUI,
+  cerroElViaje,
   esRespuestaCalificable,
   gastosRegistradosDe,
   idsDeGastosEliminadosPorElChat,
@@ -204,5 +205,26 @@ describe("esRespuestaCalificable", () => {
 
   it("una respuesta vacía no se califica", () => {
     expect(esRespuestaCalificable(asistente())).toBe(false);
+  });
+});
+
+describe("cerroElViaje", () => {
+  it("es true cuando la tool cerrar_viaje devolvió ok", () => {
+    expect(cerroElViaje(asistente(parteDeTool("cerrar_viaje", {}, { ok: true, resumen: { total: "ARS 1" } })))).toBe(true);
+  });
+
+  it("es false si el cierre falló", () => {
+    expect(cerroElViaje(asistente(parteDeTool("cerrar_viaje", {}, { ok: false, codigo: "VIAJE_SIN_GASTOS" })))).toBe(false);
+  });
+
+  it("es false mientras la tool todavía no devolvió su resultado", () => {
+    const ui = asistente({ type: "tool-cerrar_viaje", toolCallId: "t1", state: "input-available", input: {} });
+
+    expect(cerroElViaje(ui)).toBe(false);
+  });
+
+  it("es false para otras tools y para mensajes sin tools", () => {
+    expect(cerroElViaje(asistente(parteDeTool("registrar_gasto", {}, { ok: true })))).toBe(false);
+    expect(cerroElViaje(asistente({ type: "text", text: "Hola" }))).toBe(false);
   });
 });

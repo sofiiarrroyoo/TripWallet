@@ -2,11 +2,14 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { aMensajeUI } from "@/componentes/chat/mensajesUI";
 import { ChatViaje } from "@/componentes/chat/ChatViaje";
+import { AccionesViaje } from "@/componentes/viajes/AccionesViaje";
+import { ResumenDelViaje } from "@/componentes/viajes/ResumenDelViaje";
 import { CLASES_TITULO_PAGINA, CuerpoPagina, EncabezadoPagina, EnlaceVolver } from "@/componentes/pagina/Pagina";
 import { ErrorNoEncontrado } from "@/errores";
 import { formatearMonto, formatearRangoFechas } from "@/lib/formatos";
 import { RUTA_INICIO_PRIVADO } from "@/lib/rutas";
 import { cargarChat } from "@/servicios/chat";
+import { obtenerResumenViaje } from "@/servicios/cierreViaje";
 
 export const metadata: Metadata = { title: "Viaje" };
 
@@ -32,6 +35,8 @@ function Dato({ etiqueta, valor }: { etiqueta: string; valor: string }) {
 export default async function PaginaViaje({ params }: PageProps<"/viajes/[id]">) {
   const { id } = await params;
   const { viaje, mensajes, gastosEliminados, calificaciones } = await buscarChat(id);
+  // El resumen solo existe mientras el viaje está cerrado.
+  const resumen = viaje.estado === "cerrado" ? await obtenerResumenViaje(viaje.id) : null;
 
   return (
     <section aria-labelledby="titulo-viaje">
@@ -57,6 +62,8 @@ export default async function PaginaViaje({ params }: PageProps<"/viajes/[id]">)
           />
           <Dato etiqueta="Estado" valor={viaje.estado === "abierto" ? "Abierto" : "Cerrado"} />
         </dl>
+        <AccionesViaje viajeId={viaje.id} estado={viaje.estado} />
+        {viaje.estado === "cerrado" && <ResumenDelViaje resumen={resumen} />}
         <ChatViaje
           key={viaje.id}
           viajeId={viaje.id}
