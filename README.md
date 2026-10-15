@@ -21,6 +21,7 @@ Copiloto de gastos de viaje multimoneda con IA. Le contás tus gastos como habl�
 | **US4** Registrar un gasto en lenguaje natural: el bot extrae los datos, pregunta si algo es ambiguo, convierte la moneda y muestra una tarjeta con opción de deshacer | Hecha |
 | **US5** Consultar gastos por categoría, por día o total, y cómo voy contra el presupuesto, con totales calculados por código | Hecha |
 | **US6** Calificar las respuestas del bot con pulgar arriba o abajo: la calificación se guarda, se puede cambiar y se ve al volver a entrar | Hecha |
+| **US7** Panel de debug: un interruptor "Modo debug" muestra, bajo cada respuesta del bot, las tools que llamó (con parámetros y resultado), el modelo y los tokens consumidos | Hecha |
 
 Cosas que conviene probar en el chat:
 
@@ -29,11 +30,13 @@ Cosas que conviene probar en el chat:
 - `¿Cuánto llevo gastado en comida?`, `¿Y ayer?`, `¿Cuánto me queda del presupuesto?`.
 - `Compré un souvenir por 20 dólares` (si no hay una categoría que encaje, propone crear una y espera tu confirmación).
 - Tocar el pulgar arriba o abajo debajo de una respuesta del bot para calificarla.
+- Activar "Modo debug" (arriba del chat) para ver qué tools usó el bot y cuántos tokens gastó en cada respuesta.
 
 ### Extras implementados
 
 - Streaming de las respuestas.
 - Sistema de feedback: pulgar arriba o abajo en cada respuesta del bot (US6).
+- Panel de debug con las tools llamadas, sus parámetros y resultados, y los tokens por respuesta (US7).
 - Límite de 30 mensajes por hora por usuario.
 - Tests con Vitest (más de 500, sobre servicios, validaciones, tools y flujo del chat).
 - Tool calling nativo y few-shot en los prompts.
@@ -136,14 +139,6 @@ Scripts: `npm run dev`, `npm run build`, `npm run lint`, `npm run test`, `npm ru
 ## Ideas futuras
 
 La base de datos y parte de la lógica ya están preparadas (tablas `presupuestos_viaje` y `resumenes_viaje`, y las funciones `cerrar_viaje` y `reabrir_viaje`), pero estas historias no llegaron a implementarse.
-
-### US7 — Panel de debug
-
-Como evaluador técnico, quiero ver qué tools llamó el bot, con qué parámetros y cuántos tokens usó, para entender cómo razona el sistema.
-
-- Cada respuesta muestra las tools llamadas con sus parámetros y resultados.
-- Se ven los tokens consumidos por respuesta.
-- El panel se puede mostrar u ocultar.
 
 ### US8 — Cerrar un viaje y ver su resumen
 
