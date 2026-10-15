@@ -1,5 +1,5 @@
 import { formatearCotizacion, formatearMonto, formatearRangoFechas } from "@/lib/formatos";
-import type { EstadisticasViaje } from "@/tipos/cierre";
+import type { EstadisticasViaje, ResumenViaje } from "@/tipos/cierre";
 import type { Viaje } from "@/tipos/viaje";
 import type { ResumenCierre } from "@/validaciones/resumenCierre";
 
@@ -16,18 +16,14 @@ export const INSTRUCCIONES_RESUMEN = [
   '{"titular":"Gastaste ARS 53.000,00 en 10 días, dentro del presupuesto.","puntos":["Lo que más pesó fue Comida y bebida, con ARS 25.000,00 (47,2% del total).","El gasto más grande fue la cena, de ARS 21.750,00.","Te quedaron ARS 47.000,00 del presupuesto."]}',
 ].join("\n");
 
-// Lo que ve el modelo: las estadísticas con los montos ya escritos ("ARS 21.750,00"), para que los copie tal cual.
-export function presentarEstadisticas(viaje: Viaje, estadisticas: EstadisticasViaje) {
+// Las estadísticas con los montos ya escritos ("ARS 21.750,00"), para que el modelo los copie tal cual: no tiene que
+// formatear, sumar ni calcular nada.
+export function presentarNumeros(estadisticas: EstadisticasViaje) {
   const texto = (monto: number) => formatearMonto(monto, estadisticas.monedaBase);
   const { presupuesto } = estadisticas;
 
   return {
-    viaje: {
-      nombre: viaje.nombre,
-      destino: viaje.destino,
-      fechas: formatearRangoFechas(viaje.fechaInicio, viaje.fechaFin),
-      diasDelViaje: estadisticas.diasDelViaje,
-    },
+    diasDelViaje: estadisticas.diasDelViaje,
     monedaBase: estadisticas.monedaBase,
     total: texto(estadisticas.total),
     cantidadDeGastos: estadisticas.cantidadGastos,
@@ -68,6 +64,24 @@ export function presentarEstadisticas(viaje: Viaje, estadisticas: EstadisticasVi
       })),
     },
   };
+}
+
+// Lo que ve el modelo al armar el resumen: los datos del viaje y sus estadísticas.
+export function presentarEstadisticas(viaje: Viaje, estadisticas: EstadisticasViaje) {
+  return {
+    viaje: {
+      nombre: viaje.nombre,
+      destino: viaje.destino,
+      fechas: formatearRangoFechas(viaje.fechaInicio, viaje.fechaFin),
+    },
+    ...presentarNumeros(estadisticas),
+  };
+}
+
+// Lo que ve el modelo en el chat después de cerrar el viaje (con la tool cerrar_viaje): los mismos números y el texto
+// del resumen, que es null si no se pudo generar.
+export function presentarCierre({ estadisticas, resumen }: ResumenViaje) {
+  return { ...presentarNumeros(estadisticas), resumenEscrito: resumen };
 }
 
 // El texto que se guarda en resumenes_viaje.resumen: el titular y, debajo, los puntos con un guion.

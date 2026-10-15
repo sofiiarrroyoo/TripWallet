@@ -2,11 +2,13 @@ import { tool } from "ai";
 import { z } from "zod";
 import { type DetalleValidacion, ErrorApp, ErrorValidacion } from "@/errores";
 import { crearCategoria, listarCategorias } from "@/servicios/categorias";
+import { cerrarViaje } from "@/servicios/cierreViaje";
 import { consultarGastos } from "@/servicios/consultaGastos";
 import { convertir } from "@/servicios/cotizaciones";
 import { eliminarUltimoGasto, registrarGasto } from "@/servicios/gastos";
 import { esquemaPedirDatos } from "@/validaciones/pedirDatos";
 import { presentarConsulta } from "./presentarConsulta";
+import { presentarCierre } from "./resumenCierre";
 
 // Lo pone el servidor, no el modelo: la tool no tiene forma de trabajar sobre otro viaje.
 const esquemaContexto = z.object({
@@ -136,6 +138,18 @@ export const tools = {
     execute: ({ nombre }) => ejecutar(async () => ({ categoria: await crearCategoria({ nombre }) })),
   }),
 
+  cerrar_viaje: tool({
+    description:
+      "Cierra el viaje: calcula el resumen final y lo deja en solo lectura (la persona puede reabrirlo desde la pantalla " +
+      'del viaje). Llamala solo después de que la persona confirmó que quiere cerrarlo (por ejemplo, eligió "Sí, cerrarlo" ' +
+      "en una pregunta hecha con pedir_datos), nunca en el mismo turno en que se lo proponés. El resultado trae los números " +
+      "ya calculados y el resumen escrito: contá lo más importante con esos números, tal como vienen escritos.",
+    inputSchema: z.object({}),
+    contextSchema: esquemaContexto,
+    execute: (_entrada, { context }) =>
+      ejecutar(async () => ({ resumen: presentarCierre(await cerrarViaje(context.viajeId)) })),
+  }),
+
   pedir_datos: tool({
     description:
       "Le hace una pregunta a la persona y le muestra opciones para tocar. Usala solo cuando la respuesta es una elección " +
@@ -155,5 +169,6 @@ export function contextoDeTools(contexto: ContextoTools) {
     consultar_gastos: contexto,
     convertir_moneda: contexto,
     eliminar_gasto: contexto,
+    cerrar_viaje: contexto,
   };
 }

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { EstadisticasViaje } from "@/tipos/cierre";
 import type { Viaje } from "@/tipos/viaje";
 import { esquemaResumenCierre } from "@/validaciones/resumenCierre";
-import { INSTRUCCIONES_RESUMEN, presentarEstadisticas, textoDeResumen } from "./resumenCierre";
+import { INSTRUCCIONES_RESUMEN, presentarCierre, presentarEstadisticas, textoDeResumen } from "./resumenCierre";
 
 const viaje: Viaje = {
   id: "viaje-1",
@@ -67,7 +67,8 @@ describe("presentarEstadisticas", () => {
   });
 
   it("incluye los datos del viaje", () => {
-    expect(presentadas.viaje).toMatchObject({ nombre: "Vacaciones en Chile", destino: "Santiago", diasDelViaje: 10 });
+    expect(presentadas.viaje).toMatchObject({ nombre: "Vacaciones en Chile", destino: "Santiago" });
+    expect(presentadas.diasDelViaje).toBe(10);
   });
 
   it("un gasto en otra moneda trae el monto original y la cotización usada", () => {
@@ -89,6 +90,35 @@ describe("presentarEstadisticas", () => {
 
   it("sin presupuesto, lo deja en null", () => {
     expect(presentarEstadisticas(viaje, { ...estadisticas, presupuesto: null }).presupuesto).toBeNull();
+  });
+});
+
+describe("presentarCierre", () => {
+  const resumenGuardado = {
+    viajeId: "viaje-1",
+    estadisticas,
+    cotizacionesCierre: { monedaBase: "USD", fecha: "2026-10-15", fuente: "ExchangeRate-API", tasas: { ARS: 1450 }, desactualizada: false },
+    resumen: "Titular\n\n- Uno\n- Dos",
+    creadoEn: "2026-10-15T12:00:00Z",
+  };
+
+  it("trae los mismos números ya formateados y el texto del resumen", () => {
+    expect(presentarCierre(resumenGuardado)).toMatchObject({
+      total: "ARS 53.000,00",
+      cantidadDeGastos: 5,
+      resumenEscrito: "Titular\n\n- Uno\n- Dos",
+    });
+  });
+
+  it("deja el texto en null si el modelo no pudo generar el resumen", () => {
+    expect(presentarCierre({ ...resumenGuardado, resumen: null }).resumenEscrito).toBeNull();
+  });
+
+  it("no incluye datos internos como los ids o la foto de cotizaciones", () => {
+    const texto = JSON.stringify(presentarCierre(resumenGuardado));
+
+    expect(texto).not.toContain("viaje-1");
+    expect(texto).not.toContain("tasas");
   });
 });
 
