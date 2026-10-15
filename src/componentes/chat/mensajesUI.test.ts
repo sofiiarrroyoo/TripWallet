@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { Mensaje } from "@/tipos/mensaje";
 import {
   aMensajeUI,
+  esRespuestaCalificable,
   gastosRegistradosDe,
   idsDeGastosEliminadosPorElChat,
   preguntaPendienteDe,
@@ -159,5 +160,35 @@ describe("textoVisible", () => {
 
   it("es vacío si la respuesta fue solo una tarjeta", () => {
     expect(textoVisible(asistente(parteDeTool("registrar_gasto", {}, { ok: true, gasto })))).toBe("");
+  });
+});
+
+describe("esRespuestaCalificable", () => {
+  it("una respuesta con texto se puede calificar", () => {
+    expect(esRespuestaCalificable(asistente({ type: "text", text: "Listo" }))).toBe(true);
+  });
+
+  it("una respuesta que solo mostró una tarjeta de gasto se puede calificar", () => {
+    expect(esRespuestaCalificable(asistente(parteDeTool("registrar_gasto", {}, { ok: true, gasto })))).toBe(true);
+  });
+
+  it("una pregunta con opciones, sola, no se califica", () => {
+    expect(esRespuestaCalificable(asistente(parteDeTool("pedir_datos", pregunta, { ok: true })))).toBe(false);
+  });
+
+  it("una pregunta con texto sí se puede calificar", () => {
+    const ui = asistente(parteDeTool("pedir_datos", pregunta, { ok: true }), { type: "text", text: "Antes de seguir:" });
+
+    expect(esRespuestaCalificable(ui)).toBe(true);
+  });
+
+  it("un mensaje de la persona no se califica", () => {
+    const ui = { id: "u-1", role: "user", parts: [{ type: "text", text: "hola" }] } as UIMessage;
+
+    expect(esRespuestaCalificable(ui)).toBe(false);
+  });
+
+  it("una respuesta vacía no se califica", () => {
+    expect(esRespuestaCalificable(asistente())).toBe(false);
   });
 });

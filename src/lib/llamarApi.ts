@@ -12,7 +12,7 @@ export type ErrorApi = z.infer<typeof esquemaCuerpoError>["error"];
 export type ResultadoApi<T> = { ok: true; datos: T } | { ok: false; error: ErrorApi };
 
 type OpcionesLlamada = {
-  metodo?: "GET" | "POST" | "PATCH" | "DELETE";
+  metodo?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   cuerpo?: unknown;
 };
 

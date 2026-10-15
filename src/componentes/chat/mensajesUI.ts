@@ -63,3 +63,9 @@ export function idsDeGastosEliminadosPorElChat(mensajes: UIMessage[]): string[] 
 export function textoVisible(mensaje: UIMessage): string {
   return [textoDe(mensaje), preguntaPendienteDe(mensaje)?.pregunta].filter(Boolean).join("\n\n");
 }
+
+// Las respuestas del bot que se pueden calificar: las que tienen texto o una tarjeta de gasto. Una pregunta con
+// opciones, sola, no se califica.
+export function esRespuestaCalificable(mensaje: UIMessage): boolean {
+  return mensaje.role === "assistant" && (textoDe(mensaje) !== "" || gastosRegistradosDe(mensaje).length > 0);
+}
