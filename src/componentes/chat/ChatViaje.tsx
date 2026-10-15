@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { APICallError, DefaultChatTransport, type UIMessage } from "ai";
-import { CircleAlert, RotateCw } from "lucide-react";
+import { Bug, CircleAlert, RotateCw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/componentes/ui/alert";
 import { Button } from "@/componentes/ui/button";
@@ -43,6 +43,7 @@ export function ChatViaje({
 }: Props) {
   const [texto, setTexto] = useState("");
   const [puedeReintentar, setPuedeReintentar] = useState(false);
+  const [modoDebug, setModoDebug] = useState(false);
   const [eliminadosPorLaPersona, setEliminadosPorLaPersona] = useState<ReadonlySet<string>>(
     () => new Set(gastosEliminados),
   );
@@ -155,6 +156,19 @@ export function ChatViaje({
         </div>
       )}
 
+      <div className="flex justify-end">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setModoDebug((activo) => !activo)}
+          aria-pressed={modoDebug}
+          className="h-10 rounded-full px-4 aria-pressed:bg-foreground aria-pressed:text-background aria-pressed:hover:bg-foreground"
+        >
+          <Bug aria-hidden />
+          Modo debug
+        </Button>
+      </div>
+
       <div
         role="log"
         aria-label="Conversación"
@@ -175,6 +189,7 @@ export function ChatViaje({
             onElegirOpcion={elegirOpcion}
             calificacionInicial={calificaciones[mensaje.id] ?? null}
             calificable={!(indice === mensajesVisibles.length - 1 && respondiendo)}
+            mostrarDepuracion={modoDebug}
           />
         ))}
         {actividad && <IndicadorActividad etiqueta={actividad} />}

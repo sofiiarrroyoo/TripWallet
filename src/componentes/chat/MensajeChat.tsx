@@ -1,6 +1,7 @@
 import type { UIMessage } from "ai";
 import type { ValorCalificacion } from "@/validaciones/calificaciones";
 import { CalificarRespuesta } from "./CalificarRespuesta";
+import { DepuracionRespuesta } from "./DepuracionRespuesta";
 import { GloboMensaje } from "./GloboMensaje";
 import { OpcionesRespuesta } from "./OpcionesRespuesta";
 import { TarjetaGasto } from "./TarjetaGasto";
@@ -19,6 +20,8 @@ type Props = {
   calificacionInicial: ValorCalificacion | null;
   // False mientras el bot todavía está escribiendo esta respuesta.
   calificable: boolean;
+  // El modo debug: muestra bajo cada respuesta del bot las tools que llamó y los tokens que consumió.
+  mostrarDepuracion: boolean;
 };
 
 // Un mensaje del chat: los de la persona son un globo; los del asistente pueden traer tarjetas de gastos
@@ -33,6 +36,7 @@ export function MensajeChat({
   onElegirOpcion,
   calificacionInicial,
   calificable,
+  mostrarDepuracion,
 }: Props) {
   if (mensaje.role === "user") return <GloboMensaje rol="user" texto={textoVisible(mensaje)} />;
 
@@ -60,6 +64,7 @@ export function MensajeChat({
           habilitado={calificable}
         />
       )}
+      {mostrarDepuracion && <DepuracionRespuesta mensaje={mensaje} />}
       {pregunta && opcionesActivas && <OpcionesRespuesta opciones={pregunta.opciones} onElegir={onElegirOpcion} />}
     </>
   );
