@@ -68,3 +68,19 @@ export type AvanceDePresupuesto = {
   porcentajeGastado: number;
   porCategoria: AvanceDeCategoria[];
 };
+
+// Todo lo que devuelve la consulta de gastos: números ya calculados por el código.
+export type ConsultaGastos = {
+  monedaBase: string;
+  // Los filtros que se aplicaron (la categoría con su nombre exacto).
+  filtro: { categoria: string | null; desde: string | null; hasta: string | null };
+  // Total, categorías y días de los gastos que cumplen el filtro.
+  resumen: ResumenGastos;
+  // Los gastos que cumplen el filtro, del más reciente al más viejo, hasta un máximo.
+  gastos: GastoDelViaje[];
+  hayMasGastos: boolean;
+  // Siempre sobre todo el viaje, sin importar el filtro; null si el viaje no tiene presupuesto.
+  presupuesto: AvanceDePresupuesto | null;
+  // De dónde salen las cotizaciones con las que se convirtieron los gastos en otra moneda.
+  fuenteCotizaciones: string;
+};

@@ -53,3 +53,21 @@ export const esquemaResultadoRegistro = z.object({ ok: z.literal(true), gasto: e
 
 // De eliminar_gasto solo interesa saber qué gasto se borró.
 export const esquemaResultadoEliminacion = z.object({ ok: z.literal(true), gasto: z.object({ id: z.string() }) });
+
+// Un campo que el bot no quiere filtrar puede llegar omitido o como null: las dos cosas significan "sin filtro".
+const filtroOpcional = <T extends z.ZodType>(esquema: T) => esquema.nullish().transform((valor) => valor ?? undefined);
+
+// Qué quiere consultar la persona: todo el viaje, una categoría, un día o un rango de fechas (un día es desde = hasta).
+export const esquemaConsultarGastos = z
+  .object({
+    categoria: filtroOpcional(nombreCategoria),
+    desde: filtroOpcional(z.iso.date("La fecha 'desde' tiene que tener el formato AAAA-MM-DD.")),
+    hasta: filtroOpcional(z.iso.date("La fecha 'hasta' tiene que tener el formato AAAA-MM-DD.")),
+  })
+  // Las fechas ISO (AAAA-MM-DD) se pueden comparar como texto.
+  .refine(({ desde, hasta }) => desde === undefined || hasta === undefined || desde <= hasta, {
+    path: ["hasta"],
+    message: "La fecha 'hasta' no puede ser anterior a 'desde'.",
+  });
+
+export type DatosConsultarGastos = z.infer<typeof esquemaConsultarGastos>;

@@ -1,5 +1,6 @@
 import { ErrorViajeCerrado } from "@/errores";
 import type { Gasto } from "@/tipos/gasto";
+import type { GastoDelViaje } from "@/tipos/resumen";
 import type { Tables } from "@/tipos/supabase";
 import { crearClienteSupabase } from "./supabase/clienteServidor";
 
@@ -77,6 +78,67 @@ export async function obtenerUltimoGasto(viajeId: string): Promise<Gasto | null>
     .maybeSingle();
   if (error) throw error;
   return data ? aGasto(data) : null;
+}
+
+const COLUMNAS_CON_CATEGORIA =
+  "id, descripcion, fecha_gasto, monto_original, moneda_original, monto_convertido, cotizacion, fecha_cotizacion, creado_en, categorias(nombre)";
+
+// Supabase devuelve como máximo 1000 filas por consulta: se pide de a páginas para que los totales no queden
+// incompletos sin que nadie se entere.
+export const TAMANO_PAGINA_GASTOS = 1000;
+
+// Un gasto sin categoría legible no se descarta: dejarlo afuera cambiaría los totales.
+const CATEGORIA_DESCONOCIDA = "Sin categoría";
+
+type FilaConCategoria = Pick<
+  Tables<"gastos">,
+  | "id"
+  | "descripcion"
+  | "fecha_gasto"
+  | "monto_original"
+  | "moneda_original"
+  | "monto_convertido"
+  | "cotizacion"
+  | "fecha_cotizacion"
+  | "creado_en"
+> & { categorias: { nombre: string } | null };
+
+function aGastoDelViaje(fila: FilaConCategoria): GastoDelViaje {
+  return {
+    id: fila.id,
+    descripcion: fila.descripcion,
+    categoria: fila.categorias?.nombre ?? CATEGORIA_DESCONOCIDA,
+    fechaGasto: fila.fecha_gasto,
+    montoOriginal: fila.monto_original,
+    monedaOriginal: fila.moneda_original,
+    montoConvertido: fila.monto_convertido,
+    cotizacion: fila.cotizacion,
+    fechaCotizacion: fila.fecha_cotizacion,
+    creadoEn: fila.creado_en,
+  };
+}
+
+// Todos los gastos del viaje, del más reciente al más viejo, con el nombre de su categoría.
+// El RLS solo deja ver los propios, así que no se filtra por usuario.
+export async function listarGastosDelViaje(viajeId: string): Promise<GastoDelViaje[]> {
+  const supabase = await crearClienteSupabase();
+  const gastos: GastoDelViaje[] = [];
+
+  for (let desde = 0; ; desde += TAMANO_PAGINA_GASTOS) {
+    const { data, error } = await supabase
+      .from("gastos")
+      .select(COLUMNAS_CON_CATEGORIA)
+      .eq("viaje_id", viajeId)
+      // El id desempata: sin un orden total, una página podría repetir o saltearse gastos.
+      .order("fecha_gasto", { ascending: false })
+      .order("creado_en", { ascending: false })
+      .order("id", { ascending: true })
+      .range(desde, desde + TAMANO_PAGINA_GASTOS - 1);
+    if (error) throw error;
+
+    gastos.push(...data.map(aGastoDelViaje));
+    if (data.length < TAMANO_PAGINA_GASTOS) return gastos;
+  }
 }
 
 // Cuáles de estos gastos siguen existiendo en el viaje (el RLS esconde los ajenos).
