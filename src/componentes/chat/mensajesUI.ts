@@ -1,9 +1,12 @@
 import type { UIMessage } from "ai";
 import type { GastoRegistrado } from "@/tipos/gasto";
 import type { Mensaje } from "@/tipos/mensaje";
+import { z } from "zod";
 import { esquemaResultadoEliminacion, esquemaResultadoRegistro } from "@/validaciones/gastos";
 import type { MetadataMensaje } from "@/validaciones/metadataMensaje";
 import { NOMBRE_TOOL_PEDIR_DATOS, type PedirDatos, esquemaPedirDatos } from "@/validaciones/pedirDatos";
+
+const esquemaResultadoOk = z.object({ ok: z.literal(true) });
 
 // El historial vive en nuestra base; useChat espera mensajes en el formato de la UI, hechos de "partes". Las tools
 // guardadas en el mensaje vuelven a ser partes ya resueltas, igual que cuando llegaron por el stream.
@@ -71,6 +74,12 @@ export function idsDeGastosEliminadosPorElChat(mensajes: UIMessage[]): string[] 
 // Lo que dice el globo: el texto y, si el bot hizo una pregunta, la pregunta (las opciones son botones aparte).
 export function textoVisible(mensaje: UIMessage): string {
   return [textoDe(mensaje), preguntaPendienteDe(mensaje)?.pregunta].filter(Boolean).join("\n\n");
+}
+
+// El bot cerró el viaje en este mensaje (la tool cerrar_viaje devolvió ok): la página tiene que recargarse para mostrar
+// el resumen y bloquear el registro de gastos.
+export function cerroElViaje(mensaje: UIMessage): boolean {
+  return partesDeTool(mensaje, "cerrar_viaje").some((parte) => esquemaResultadoOk.safeParse(propiedad(parte, "output")).success);
 }
 
 // Las respuestas del bot que se pueden calificar: las que tienen texto o una tarjeta de gasto. Una pregunta con

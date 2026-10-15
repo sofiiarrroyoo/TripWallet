@@ -22,6 +22,7 @@ Copiloto de gastos de viaje multimoneda con IA. Le contás tus gastos como habl�
 | **US5** Consultar gastos por categoría, por día o total, y cómo voy contra el presupuesto, con totales calculados por código | Hecha |
 | **US6** Calificar las respuestas del bot con pulgar arriba o abajo: la calificación se guarda, se puede cambiar y se ve al volver a entrar | Hecha |
 | **US7** Panel de debug: un interruptor "Modo debug" muestra, bajo cada respuesta del bot, las tools que llamó (con parámetros y resultado), el modelo y los tokens consumidos | Hecha |
+| **US8** Cerrar un viaje y ver su resumen: se calculan y guardan total, categorías, promedio por día y gastos más grandes, se compara lo planificado contra lo real, se guardan las cotizaciones del cierre y el bot redacta un resumen breve; el viaje queda en solo lectura y se puede reabrir | Hecha |
 
 Cosas que conviene probar en el chat:
 
@@ -29,6 +30,7 @@ Cosas que conviene probar en el chat:
 - `Gasté 3000 pesos en el taxi` (es ambiguo: pregunta qué pesos, con botones).
 - `¿Cuánto llevo gastado en comida?`, `¿Y ayer?`, `¿Cuánto me queda del presupuesto?`.
 - `Compré un souvenir por 20 dólares` (si no hay una categoría que encaje, propone crear una y espera tu confirmación).
+- `Cerrá el viaje` (pide confirmación con botones, cierra el viaje y muestra el resumen). También se puede cerrar y reabrir con los botones de la pantalla del viaje.
 - Tocar el pulgar arriba o abajo debajo de una respuesta del bot para calificarla.
 - Activar "Modo debug" (arriba del chat) para ver qué tools usó el bot y cuántos tokens gastó en cada respuesta.
 
@@ -37,6 +39,7 @@ Cosas que conviene probar en el chat:
 - Streaming de las respuestas.
 - Sistema de feedback: pulgar arriba o abajo en cada respuesta del bot (US6).
 - Panel de debug con las tools llamadas, sus parámetros y resultados, y los tokens por respuesta (US7).
+- Salida estructurada: el resumen del viaje se pide al modelo con un esquema de Zod (titular y puntos) y se valida antes de guardarlo (US8).
 - Límite de 30 mensajes por hora por usuario.
 - Tests con Vitest (más de 500, sobre servicios, validaciones, tools y flujo del chat).
 - Tool calling nativo y few-shot en los prompts.
@@ -72,8 +75,9 @@ Decisiones principales:
 - **Cotizaciones:** [open.er-api.com](https://open.er-api.com) con timeout, reintentos con backoff, caché diaria en la base y, si la API falla, última cotización guardada con aviso. Si no hay ninguna, no se guarda el gasto.
 - **Historial en el servidor:** el modelo recibe los últimos 20 mensajes más el contexto del viaje (moneda base, presupuesto, categorías, fecha de hoy y zona horaria). El servidor guarda cada mensaje antes de llamar al modelo.
 - **Gastos de viajes cerrados:** un trigger en la base los bloquea, además de la validación en los servicios.
+- **Cierre de viaje:** las estadísticas las calcula el código (reutilizando los cálculos de la consulta del chat) y el modelo solo redacta el resumen. Cerrar es una transacción de Postgres (`cerrar_viaje`) que comprueba que los gastos usados sigan siendo todos los del viaje: si cambiaron mientras se armaba el resumen, se recalcula y se reintenta hasta 3 veces. El resumen del modelo tiene un límite de 20 segundos y, si falla, el viaje se cierra igual sin texto. Sin cotizaciones (ni de hoy ni guardadas) no se cierra.
 
-Tools del bot: `registrar_gasto`, `consultar_gastos`, `convertir_moneda`, `eliminar_gasto`, `crear_categoria` y `pedir_datos`.
+Tools del bot: `registrar_gasto`, `consultar_gastos`, `convertir_moneda`, `eliminar_gasto`, `crear_categoria`, `cerrar_viaje` y `pedir_datos`.
 
 ### Por qué estas tools y esta API
 
@@ -131,23 +135,17 @@ Scripts: `npm run dev`, `npm run build`, `npm run lint`, `npm run test`, `npm ru
 - Una persona que llame directo a la API de Supabase con su propia sesión podría guardar mensajes con rol de asistente o un `monto_convertido` inventado. Solo afecta sus propios datos (RLS); bloquearlo exigiría escribir con la clave secreta, que se descartó a propósito.
 - El límite de 30 mensajes por hora no es transaccional: dos pedidos exactamente simultáneos pueden pasarlo por uno o dos mensajes.
 - Si se cancela una respuesta, lo que el bot alcanzó a escribir se guarda al cerrarse el stream; en un despliegue serverless podría no completarse si la función se corta al desconectarse el navegador.
-- Por chat solo se puede eliminar el último gasto cargado.
+- Por chat solo se puede eliminar el último gasto cargado, y el viaje se cierra pero no se reabre (eso se hace con el botón de la pantalla).
+- Cerrar el viaje desde el chat pide confirmación por instrucción del prompt, no por código: es reversible (se puede reabrir), así que se consideró suficiente.
+- Al reabrir un viaje se borra su resumen y al volver a cerrarlo se genera uno nuevo (así nunca queda desactualizado). El texto del resumen no se puede reintentar sin reabrir.
+- El promedio por día se calcula sobre los días del viaje (de inicio a fin), no sobre los días con gastos.
 - Los montos se guardan con 2 decimales: monedas con 3 (por ejemplo el dinar kuwaití) pierden el último.
 - Las respuestas del bot se muestran como texto plano, sin Markdown.
 - El registro avisa si un email ya tiene cuenta (sin confirmación de email es inevitable; se priorizó un mensaje útil).
 
 ## Ideas futuras
 
-La base de datos y parte de la lógica ya están preparadas (tablas `presupuestos_viaje` y `resumenes_viaje`, y las funciones `cerrar_viaje` y `reabrir_viaje`), pero estas historias no llegaron a implementarse.
-
-### US8 — Cerrar un viaje y ver su resumen
-
-Como viajero, quiero cerrar un viaje terminado y ver un resumen de lo que gasté, para entender en qué se me fue la plata.
-
-- Al cerrar se calculan y guardan total, total por categoría, promedio por día, comparación con el presupuesto y gastos más grandes.
-- Si hubo presupuesto previo, se ve lo planificado contra lo real por categoría.
-- Se guarda la foto de cotizaciones del día de cierre y el bot genera un resumen breve.
-- El viaje cerrado queda en solo lectura y se puede reabrir.
+La tabla `presupuestos_viaje` ya existe y el cierre de viaje ya la lee, pero estas historias no llegaron a implementarse.
 
 ### US9 — Estimar el presupuesto antes de viajar
 

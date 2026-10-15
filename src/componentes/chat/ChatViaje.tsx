@@ -3,6 +3,7 @@
 import { useChat } from "@ai-sdk/react";
 import { APICallError, DefaultChatTransport, type UIMessage } from "ai";
 import { Bug, CircleAlert, RotateCw } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/componentes/ui/alert";
 import { Button } from "@/componentes/ui/button";
@@ -12,7 +13,7 @@ import { EntradaChat } from "./EntradaChat";
 import { IndicadorActividad } from "./IndicadorActividad";
 import { MensajeChat } from "./MensajeChat";
 import { mensajeDeError } from "./mensajeDeError";
-import { gastosRegistradosDe, idsDeGastosEliminadosPorElChat, textoDe, textoVisible } from "./mensajesUI";
+import { cerroElViaje, gastosRegistradosDe, idsDeGastosEliminadosPorElChat, textoDe, textoVisible } from "./mensajesUI";
 
 type Props = {
   viajeId: string;
@@ -44,6 +45,9 @@ export function ChatViaje({
   const [texto, setTexto] = useState("");
   const [puedeReintentar, setPuedeReintentar] = useState(false);
   const [modoDebug, setModoDebug] = useState(false);
+  const router = useRouter();
+  // Los cierres que ya se atendieron: los de antes de abrir la página no vuelven a recargarla.
+  const [cierresAtendidos] = useState(() => new Set(mensajesIniciales.filter(cerroElViaje).map((mensaje) => mensaje.id)));
   const [eliminadosPorLaPersona, setEliminadosPorLaPersona] = useState<ReadonlySet<string>>(
     () => new Set(gastosEliminados),
   );
@@ -103,6 +107,17 @@ export function ChatViaje({
     window.addEventListener("scroll", alDesplazar, { passive: true });
     return () => window.removeEventListener("scroll", alDesplazar);
   }, []);
+
+  // Si el bot cerró el viaje, la página se recarga para mostrar el resumen y bloquear el registro de gastos.
+  useEffect(() => {
+    if (status !== "ready") return;
+    for (const mensaje of messages) {
+      if (cerroElViaje(mensaje) && !cierresAtendidos.has(mensaje.id)) {
+        cierresAtendidos.add(mensaje.id);
+        router.refresh();
+      }
+    }
+  }, [messages, status, router, cierresAtendidos]);
 
   // Sigue la conversación hacia abajo, salvo que la persona haya subido a leer algo anterior.
   useEffect(() => {

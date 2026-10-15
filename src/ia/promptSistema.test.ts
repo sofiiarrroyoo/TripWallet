@@ -138,6 +138,35 @@ describe("construirPromptSistema", () => {
     });
   });
 
+  describe("reglas para cerrar el viaje", () => {
+    it("le indica pedir confirmación con pedir_datos antes de llamar a cerrar_viaje", () => {
+      const texto = prompt();
+
+      expect(texto).toMatch(/preguntale con pedir_datos si está segura/);
+      expect(texto).toMatch(/Sí, cerrarlo/);
+      expect(texto).toMatch(/Llamá a cerrar_viaje solo después de que acepte, nunca en el mismo turno/);
+    });
+
+    it("le indica no cerrar un viaje que ya está cerrado y que reabrir no se hace desde el chat", () => {
+      expect(prompt()).toMatch(/Si el viaje ya figura como cerrado, no llames a cerrar_viaje.*Reabrirlo no se hace desde el chat/);
+    });
+
+    it("le indica explicar la falla de un viaje sin gastos", () => {
+      expect(prompt()).toMatch(/no tiene gastos, explicalo y sugerí registrar al menos uno/);
+    });
+
+    it("le indica contar el cierre con los números del resultado y avisar si no hay texto del resumen", () => {
+      const texto = prompt();
+
+      expect(texto).toMatch(/Después de cerrar, contá en pocas palabras lo más importante con los números del resultado/);
+      expect(texto).toMatch(/Si resumenEscrito es null/);
+    });
+
+    it("incluye un ejemplo de cierre con confirmación", () => {
+      expect(prompt()).toMatch(/"cerrá el viaje" -> pedir_datos.*cerrar_viaje/);
+    });
+  });
+
   describe("reglas sobre números", () => {
     it("le prohíbe calcular o inventar los números del viaje y le indica usar convertir_moneda", () => {
       const texto = prompt();
@@ -151,11 +180,12 @@ describe("construirPromptSistema", () => {
       expect(prompt()).toMatch(/precios orientativos de un lugar.*rango aproximado.*estimación/);
     });
 
-    it("aclara lo que todavía no puede hacer y que no prometa recordar nada", () => {
-      const texto = prompt();
+    it("le indica que no prometa recordar nada por su cuenta", () => {
+      expect(prompt()).toMatch(/No prometas recordar ni anotar nada por tu cuenta/);
+    });
 
-      expect(texto).toMatch(/Todavía no podés cerrar el viaje desde el chat/);
-      expect(texto).toMatch(/No prometas recordar ni anotar nada por tu cuenta/);
+    it("ya no dice que no puede cerrar el viaje", () => {
+      expect(prompt()).not.toMatch(/Todavía no podés cerrar/);
     });
 
     it("ya no dice que no puede consultar lo gastado", () => {

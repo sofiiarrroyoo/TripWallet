@@ -5,8 +5,10 @@ import {
   ErrorNoEncontrado,
   ErrorValidacion,
   ErrorViajeCerrado,
+  ErrorViajeSinGastos,
 } from "@/errores";
 import { crearCategoria, listarCategorias } from "@/servicios/categorias";
+import { cerrarViaje } from "@/servicios/cierreViaje";
 import { consultarGastos } from "@/servicios/consultaGastos";
 import { convertir } from "@/servicios/cotizaciones";
 import { eliminarUltimoGasto, registrarGasto } from "@/servicios/gastos";
@@ -15,6 +17,7 @@ import type { ConsultaGastos } from "@/tipos/resumen";
 import { contextoDeTools, tools } from "./tools";
 
 vi.mock("@/servicios/categorias");
+vi.mock("@/servicios/cierreViaje");
 vi.mock("@/servicios/consultaGastos");
 vi.mock("@/servicios/cotizaciones");
 vi.mock("@/servicios/gastos");
@@ -269,6 +272,86 @@ describe("crear_categoria", () => {
   });
 });
 
+describe("cerrar_viaje", () => {
+  const resumenGuardado = {
+    viajeId: "viaje-1",
+    estadisticas: {
+      monedaBase: "ARS",
+      total: 53000,
+      cantidadGastos: 5,
+      diasDelViaje: 10,
+      promedioPorDia: 5300,
+      porCategoria: [],
+      gastosMasGrandes: [],
+      presupuesto: null,
+    },
+    cotizacionesCierre: {
+      monedaBase: "USD",
+      fecha: "2026-10-15",
+      fuente: "ExchangeRate-API (open.er-api.com)",
+      tasas: { ARS: 1450 },
+      desactualizada: false,
+    },
+    resumen: "Titular\n\n- Uno\n- Dos",
+    creadoEn: "2026-10-15T12:00:00Z",
+  };
+
+  it("cierra el viaje del servidor y devuelve los números ya formateados con el texto del resumen", async () => {
+    vi.mocked(cerrarViaje).mockResolvedValue(resumenGuardado);
+
+    const resultado = await tools.cerrar_viaje.execute!({}, opciones);
+
+    expect(cerrarViaje).toHaveBeenCalledWith("viaje-1");
+    expect(resultado).toMatchObject({
+      ok: true,
+      resumen: { total: "ARS 53.000,00", cantidadDeGastos: 5, resumenEscrito: "Titular\n\n- Uno\n- Dos" },
+    });
+  });
+
+  it("no le pasa al modelo la foto de cotizaciones ni los ids", async () => {
+    vi.mocked(cerrarViaje).mockResolvedValue(resumenGuardado);
+
+    const texto = JSON.stringify(await tools.cerrar_viaje.execute!({}, opciones));
+
+    expect(texto).not.toContain("tasas");
+    expect(texto).not.toContain("viajeId");
+  });
+
+  it("devuelve la falla si el viaje no tiene gastos, para que el bot la explique", async () => {
+    vi.mocked(cerrarViaje).mockRejectedValue(new ErrorViajeSinGastos());
+
+    const resultado = await tools.cerrar_viaje.execute!({}, opciones);
+
+    expect(resultado).toMatchObject({ ok: false, codigo: "VIAJE_SIN_GASTOS" });
+  });
+
+  it("devuelve la falla si el viaje ya estaba cerrado", async () => {
+    vi.mocked(cerrarViaje).mockRejectedValue(new ErrorViajeCerrado());
+
+    await expect(tools.cerrar_viaje.execute!({}, opciones)).resolves.toMatchObject({
+      ok: false,
+      codigo: "VIAJE_CERRADO",
+    });
+  });
+
+  it("devuelve la falla si no hay cotizaciones", async () => {
+    vi.mocked(cerrarViaje).mockRejectedValue(new ErrorCotizacionNoDisponible());
+
+    await expect(tools.cerrar_viaje.execute!({}, opciones)).resolves.toMatchObject({
+      ok: false,
+      codigo: "COTIZACION_NO_DISPONIBLE",
+    });
+  });
+
+  it("cierra siempre el viaje del contexto, aunque el modelo mande otro id", async () => {
+    vi.mocked(cerrarViaje).mockResolvedValue(resumenGuardado);
+
+    await tools.cerrar_viaje.execute!({ viajeId: "otro-viaje" } as never, opciones);
+
+    expect(cerrarViaje).toHaveBeenCalledWith("viaje-1");
+  });
+});
+
 describe("pedir_datos", () => {
   it("no ejecuta nada: la interfaz muestra la pregunta con sus opciones", async () => {
     const resultado = await tools.pedir_datos.execute!(
@@ -287,6 +370,7 @@ describe("contextoDeTools", () => {
       consultar_gastos: contexto,
       convertir_moneda: contexto,
       eliminar_gasto: contexto,
+      cerrar_viaje: contexto,
     });
   });
 });
