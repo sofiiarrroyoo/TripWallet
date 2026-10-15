@@ -138,8 +138,9 @@ export const tools = {
 
   pedir_datos: tool({
     description:
-      "Le hace una pregunta a la persona y le muestra opciones para tocar. Usala cuando falta un dato o algo es " +
-      'ambiguo (ej. "pesos" sin aclarar cuáles, una categoría dudosa, confirmar la creación de una categoría). ' +
+      "Le hace una pregunta a la persona y le muestra opciones para tocar. Usala solo cuando la respuesta es una elección " +
+      'entre opciones concretas (ej. "pesos" sin aclarar cuáles, una categoría dudosa, confirmar la creación de una categoría). ' +
+      "No la uses para datos libres (descripción, monto, fecha): esos se preguntan escribiendo, sin opciones. " +
       "Escribí la pregunta solo acá, sin repetirla como texto. Después de llamarla no escribas nada más: esperá la respuesta.",
     inputSchema: esquemaPedirDatos,
     // La interfaz muestra la pregunta y las opciones a partir de los argumentos; no hay nada para ejecutar.

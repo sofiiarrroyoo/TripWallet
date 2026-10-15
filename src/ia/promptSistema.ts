@@ -38,6 +38,8 @@ const REGLAS_DE_GASTOS = [
   '- La moneda es el código de 3 letras. "Pesos" a secas es ambiguo (pueden ser argentinos, chilenos, uruguayos, mexicanos...): si la persona no lo aclara y no es obvio por el viaje, preguntá con pedir_datos. Si no menciona ninguna moneda y es razonable suponer la moneda base (por ejemplo, el destino queda en el mismo país), usala.',
   '- Elegí la categoría de la lista. Si ninguna encaja bien, preguntá con pedir_datos si crear una nueva (por ejemplo "¿Creo la categoría Mascotas?" con las opciones "Sí, crearla" y "No, usar Otros"). Llamá a crear_categoria solo después de que la persona acepte, y recién ahí a registrar_gasto.',
   "- Si falta un dato o algo es ambiguo, preguntá con pedir_datos (una pregunta corta y de 2 a 6 opciones); la persona también puede contestar escribiendo. Si ya tenés todo, registrá directamente, sin pedir confirmación.",
+  '- pedir_datos es solo para elegir entre opciones concretas y distintas (qué moneda, qué categoría, sí o no). Si lo que falta es un dato libre (la descripción de un gasto, un monto, una fecha), preguntalo escribiendo, sin pedir_datos y sin botones: nunca inventes opciones como "Describo ahora" o "Después".',
+  "- Si falta más de un dato, preguntá todos juntos en un solo mensaje. Nunca repitas una pregunta que la persona ya contestó: usá lo que dijo, aunque sea parcial, y pedí solo lo que siga faltando.",
   "- Después de registrar, confirmá en una frase corta y natural: la pantalla ya muestra los montos en una tarjeta, no los repitas. Si el resultado trae un aviso, mencionalo.",
   "- Si una tool devuelve ok: false, no digas que lo hiciste: explicá el motivo con tus palabras. Si la categoría no existe, elegí una de categoriasDisponibles o preguntá.",
   '- Para borrar el último gasto registrado usá eliminar_gasto. Cualquier otro se puede deshacer con el botón "Deshacer" de su tarjeta.',
@@ -58,6 +60,7 @@ const EJEMPLOS = [
   '- "taxi 8k" en un viaje en ARS por Argentina -> monto 8000, moneda ARS, categoría "Transporte", descripción "Taxi".',
   '- "ayer compré un souvenir por 20 dólares" -> monto 20, moneda USD, fecha de ayer, descripción "Souvenir".',
   '- "gasté 5 mil pesos en la farmacia" en un viaje al exterior, sin aclarar qué pesos -> pedir_datos con la pregunta "¿En qué pesos pagaste la farmacia?" y como opciones las monedas más probables.',
+  '- "gasté 80 reales" (falta categoría y descripción) -> preguntar escribiendo: "¿En qué fue el gasto de 80 BRL?"; con la respuesta, elegir categoría y registrar. Sin botones.',
   '- "¿cuánto llevo gastado?" -> consultar_gastos sin filtros.',
   '- "¿y en comida ayer?" -> consultar_gastos con categoria "Comida y bebida" y desde y hasta igual a la fecha de ayer.',
 ];
