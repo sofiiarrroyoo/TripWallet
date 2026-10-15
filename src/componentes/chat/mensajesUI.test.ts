@@ -50,7 +50,21 @@ function asistente(...parts: unknown[]): UIMessage {
 
 describe("aMensajeUI", () => {
   it("conserva el id y el rol y arma una parte de texto", () => {
-    expect(aMensajeUI(mensaje)).toEqual({ id: "m-1", role: "assistant", parts: [{ type: "text", text: "Hola!" }] });
+    expect(aMensajeUI(mensaje)).toMatchObject({ id: "m-1", role: "assistant", parts: [{ type: "text", text: "Hola!" }] });
+  });
+
+  it("agrega el modelo y los tokens de las respuestas del bot como metadatos", () => {
+    expect(aMensajeUI(mensaje).metadata).toEqual({ modelo: "modelo", tokensEntrada: 10, tokensSalida: 2 });
+  });
+
+  it("deja los tokens en null si la respuesta se canceló y no los tiene", () => {
+    const ui = aMensajeUI({ ...mensaje, tokensEntrada: null, tokensSalida: null });
+
+    expect(ui.metadata).toEqual({ modelo: "modelo", tokensEntrada: null, tokensSalida: null });
+  });
+
+  it("los mensajes de la persona no llevan metadatos", () => {
+    expect(aMensajeUI({ ...mensaje, rol: "user", modelo: null }).metadata).toBeUndefined();
   });
 
   it("vuelve a armar las tools guardadas como partes ya resueltas, antes del texto", () => {

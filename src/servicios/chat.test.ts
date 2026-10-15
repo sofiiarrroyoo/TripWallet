@@ -127,7 +127,7 @@ function modeloQueFalla() {
   );
 }
 
-type Fragmento = { type: string; messageId?: string; delta?: string };
+type Fragmento = { type: string; messageId?: string; delta?: string; messageMetadata?: unknown };
 
 async function leerTodo(stream: ReadableStream<unknown>, alLeer?: (fragmento: Fragmento) => void) {
   const fragmentos: Fragmento[] = [];
@@ -183,6 +183,16 @@ describe("responderMensaje", () => {
       tokensSalida: 5,
       modelo: "modelo-de-prueba",
     });
+  });
+
+  it("informa el modelo y los tokens por el stream, para el panel de debug", async () => {
+    modeloQueResponde(["Hola"]);
+
+    const fragmentos = await leerTodo(await responderMensaje("viaje-1", enviar("hola"), sinSenal()));
+
+    // Van dentro de los fragmentos "start" (modelo) y "finish" (tokens).
+    const metadatos = fragmentos.map((f) => f.messageMetadata).filter(Boolean);
+    expect(Object.assign({}, ...metadatos)).toEqual({ modelo: "modelo-de-prueba", tokensEntrada: 10, tokensSalida: 5 });
   });
 
   it("le pasa al modelo el contexto del viaje y los últimos 20 mensajes", async () => {

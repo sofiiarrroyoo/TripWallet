@@ -18,6 +18,7 @@ import type { Mensaje } from "@/tipos/mensaje";
 import type { Viaje } from "@/tipos/viaje";
 import type { ValorCalificacion } from "@/validaciones/calificaciones";
 import { esquemaPedidoChat } from "@/validaciones/chat";
+import type { MetadataMensaje } from "@/validaciones/metadataMensaje";
 import { esquemaResultadoRegistro } from "@/validaciones/gastos";
 import { type LlamadaTool, esquemaLlamadasTools } from "@/validaciones/mensajes";
 import { NOMBRE_TOOL_PEDIR_DATOS, esquemaPedirDatos, textoDePedirDatos } from "@/validaciones/pedirDatos";
@@ -204,6 +205,17 @@ export async function responderMensaje(viajeId: string, datos: unknown, senal: A
     tools,
     generateMessageId: () => datosRespuesta.idRespuesta,
     sendReasoning: false,
+    // El modelo se informa al empezar y los tokens al terminar (si se cancela, no hay tokens): es lo que muestra el
+    // panel de debug sin tener que recargar la página.
+    messageMetadata: ({ part }): MetadataMensaje | undefined => {
+      if (part.type === "start") return { modelo: datosRespuesta.nombreModelo };
+      if (part.type === "finish") {
+        return {
+          tokensEntrada: part.totalUsage.inputTokens ?? null,
+          tokensSalida: part.totalUsage.outputTokens ?? null,
+        };
+      }
+    },
     // Al navegador llega un mensaje genérico; el detalle queda en el log del servidor.
     onError: (error) => {
       console.error("Falló la respuesta del modelo", error);
