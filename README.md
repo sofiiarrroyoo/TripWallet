@@ -145,7 +145,7 @@ Scripts: `npm run dev`, `npm run build`, `npm run lint`, `npm run test`, `npm ru
 
 ## Ideas futuras
 
-La tabla `presupuestos_viaje` ya existe y el cierre de viaje ya la lee, pero estas historias no llegaron a implementarse.
+Estas dos historias no llegaron a implementarse. Parte de la base ya está lista: la tabla `presupuestos_viaje` existe y el cierre de viaje ya la lee (con presupuesto por categoría, el resumen compararía lo planificado contra lo real categoría por categoría), y al cerrar un viaje ya se guarda la foto de las cotizaciones del día, que es lo que necesita la comparación entre viajes.
 
 ### US9 — Estimar el presupuesto antes de viajar
 
@@ -157,8 +157,16 @@ Como viajero que está planificando un viaje, quiero que el bot me haga algunas 
 - Se estima en la moneda del destino y se muestra en la moneda base con la cotización usada.
 - Puedo editar los montos antes de aceptar; al aceptar queda como presupuesto por categoría del viaje.
 
+### US10 — Comparar viajes
+
+Como viajero, quiero comparar mis viajes cerrados en la moneda que elija, para saber en cuál gasté más y planificar mejor el próximo.
+
+- Puedo elegir la moneda de comparación.
+- Las conversiones usan la cotización del día de cierre de cada viaje (ya guardada al cerrar).
+- La comparación muestra el gasto promedio por día, además del total.
+- Si no tengo al menos dos viajes cerrados, veo un mensaje que lo explica.
+
 ### Otras ideas
 
-- **US10:** comparar viajes cerrados en la moneda que se elija, con gasto promedio por día.
 - Tests end-to-end con Cypress.
 - Reintentar solo el resumen del modelo de un viaje cerrado, sin reabrirlo.
