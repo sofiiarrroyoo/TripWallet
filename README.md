@@ -3,7 +3,7 @@
 Copiloto de gastos de viaje multimoneda con IA. Le contás tus gastos como hablás ("pagué 15 lucas chilenas la cena"), los convierte a la moneda de tu viaje y te dice cómo venís contra el presupuesto.
 
 - **App en producción:** https://tripwallet-sofia.vercel.app
-- **Cuenta demo** (con viajes y gastos cargados): `<EMAIL_DEMO>` / `<CONTRASEÑA_DEMO>`
+- **Cuenta demo** (con viajes y gastos cargados): `coquito@gmail.com` / `Argentina2`
 
 ## Definición del producto
 
