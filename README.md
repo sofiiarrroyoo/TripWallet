@@ -20,6 +20,7 @@ Copiloto de gastos de viaje multimoneda con IA. Le contás tus gastos como habl�
 | **US3** Chat con historial guardado, streaming, cancelar respuesta, reintentar si falla y contador de caracteres | Hecha |
 | **US4** Registrar un gasto en lenguaje natural: el bot extrae los datos, pregunta si algo es ambiguo, convierte la moneda y muestra una tarjeta con opción de deshacer | Hecha |
 | **US5** Consultar gastos por categoría, por día o total, y cómo voy contra el presupuesto, con totales calculados por código | Hecha |
+| **US6** Calificar las respuestas del bot con pulgar arriba o abajo: la calificación se guarda, se puede cambiar y se ve al volver a entrar | Hecha |
 
 Cosas que conviene probar en el chat:
 
@@ -27,10 +28,12 @@ Cosas que conviene probar en el chat:
 - `Gasté 3000 pesos en el taxi` (es ambiguo: pregunta qué pesos, con botones).
 - `¿Cuánto llevo gastado en comida?`, `¿Y ayer?`, `¿Cuánto me queda del presupuesto?`.
 - `Compré un souvenir por 20 dólares` (si no hay una categoría que encaje, propone crear una y espera tu confirmación).
+- Tocar el pulgar arriba o abajo debajo de una respuesta del bot para calificarla.
 
 ### Extras implementados
 
 - Streaming de las respuestas.
+- Sistema de feedback: pulgar arriba o abajo en cada respuesta del bot (US6).
 - Límite de 30 mensajes por hora por usuario.
 - Tests con Vitest (más de 500, sobre servicios, validaciones, tools y flujo del chat).
 - Tool calling nativo y few-shot en los prompts.
@@ -68,6 +71,27 @@ Decisiones principales:
 - **Gastos de viajes cerrados:** un trigger en la base los bloquea, además de la validación en los servicios.
 
 Tools del bot: `registrar_gasto`, `consultar_gastos`, `convertir_moneda`, `eliminar_gasto`, `crear_categoria` y `pedir_datos`.
+
+### Por qué estas tools y esta API
+
+- **La API externa es una de cotizaciones** porque el problema del producto es la multimoneda: sin una cotización del día no se puede convertir un gasto ni comparar contra el presupuesto. `open.er-api.com` es gratuita y no requiere clave.
+- **Tool A (API externa):** `convertir_moneda` y `registrar_gasto` usan las cotizaciones. **Tool B (acción interna):** `registrar_gasto`, `consultar_gastos`, `eliminar_gasto` y `crear_categoria` guardan, leen y calculan estadísticas sobre la base.
+- **El modelo decide cuándo usar cada una** según lo que cuente la persona: un gasto, una consulta, una conversión suelta o una pregunta de aclaración.
+- **`pedir_datos` existe para no adivinar:** si falta o es ambiguo un dato que se elige entre opciones (por ejemplo qué "pesos"), el bot pregunta con botones en vez de guardar algo incorrecto. Los datos libres (descripción, monto) se preguntan escribiendo.
+
+### Cómo se estructuran los prompts
+
+- **Prompt del sistema armado por código** en cada mensaje: datos del viaje (moneda base, presupuesto, categorías), la fecha de hoy en la zona horaria de la persona y reglas separadas por tema (registrar gastos, consultar, formato de las respuestas).
+- **Few-shot:** ejemplos concretos ("15 lucas chilenas", "taxi 8k", "pesos" ambiguos, consultas por categoría y por día) para fijar cómo interpretar montos, monedas y fechas.
+- **Salida estructurada:** cada tool tiene un schema de Zod; los argumentos que manda el modelo se validan antes de ejecutar nada.
+- **El modelo recibe los números ya calculados y formateados** (por ejemplo en `consultar_gastos`) y tiene la instrucción de no sumar ni calcular porcentajes.
+
+### Manejo de errores
+
+- **Errores propios en los servicios** (validación, no encontrado, viaje cerrado, cotización no disponible) que los route handlers traducen a HTTP (400, 404, 409, 503) con un formato único: `{ "error": { "codigo": "...", "mensaje": "..." } }`. Los errores inesperados se registran con detalle en el servidor y la persona ve un mensaje genérico.
+- **Las tools no lanzan excepciones:** devuelven un resultado que describe la falla (`ok: false`, código y mensaje) para que el bot la explique con sus palabras y no diga que guardó algo que no guardó.
+- **API de cotizaciones:** timeout de 5 segundos, hasta 2 reintentos con espera creciente ante errores 5xx o límite de pedidos, validación de la respuesta con Zod y caché diaria; si todo falla se usa la última cotización guardada, avisando, y si no hay ninguna no se guarda el gasto.
+- **En el chat:** si algo falla se muestra la causa y un botón para reintentar; los estados de carga y error se anuncian a lectores de pantalla.
 
 ## Correrlo en local
 
@@ -111,15 +135,7 @@ Scripts: `npm run dev`, `npm run build`, `npm run lint`, `npm run test`, `npm ru
 
 ## Ideas futuras
 
-La base de datos y parte de la lógica ya están preparadas (tablas `calificaciones`, `presupuestos_viaje` y `resumenes_viaje`, y las funciones `cerrar_viaje` y `reabrir_viaje`), pero estas historias no llegaron a implementarse.
-
-### US6 — Calificar las respuestas
-
-Como viajero, quiero marcar si una respuesta del bot me sirvió o no, para ayudar a mejorar el asistente.
-
-- Cada respuesta del bot tiene pulgar arriba y abajo.
-- La calificación se guarda y se puede cambiar.
-- Solo se pueden calificar respuestas de los propios viajes.
+La base de datos y parte de la lógica ya están preparadas (tablas `presupuestos_viaje` y `resumenes_viaje`, y las funciones `cerrar_viaje` y `reabrir_viaje`), pero estas historias no llegaron a implementarse.
 
 ### US7 — Panel de debug
 
