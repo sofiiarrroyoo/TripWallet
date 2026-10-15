@@ -2,6 +2,7 @@ import type { UIMessage } from "ai";
 import type { GastoRegistrado } from "@/tipos/gasto";
 import type { Mensaje } from "@/tipos/mensaje";
 import { esquemaResultadoEliminacion, esquemaResultadoRegistro } from "@/validaciones/gastos";
+import type { MetadataMensaje } from "@/validaciones/metadataMensaje";
 import { NOMBRE_TOOL_PEDIR_DATOS, type PedirDatos, esquemaPedirDatos } from "@/validaciones/pedirDatos";
 
 // El historial vive en nuestra base; useChat espera mensajes en el formato de la UI, hechos de "partes". Las tools
@@ -16,7 +17,15 @@ export function aMensajeUI(mensaje: Mensaje): UIMessage {
   }));
   const partesDeTexto = mensaje.contenido ? [{ type: "text", text: mensaje.contenido }] : [];
 
-  return { id: mensaje.id, role: mensaje.rol, parts: [...partesDeTools, ...partesDeTexto] as UIMessage["parts"] };
+  const partes = [...partesDeTools, ...partesDeTexto] as UIMessage["parts"];
+  if (mensaje.rol === "user") return { id: mensaje.id, role: mensaje.rol, parts: partes };
+
+  const metadata: MetadataMensaje = {
+    modelo: mensaje.modelo,
+    tokensEntrada: mensaje.tokensEntrada,
+    tokensSalida: mensaje.tokensSalida,
+  };
+  return { id: mensaje.id, role: mensaje.rol, parts: partes, metadata };
 }
 
 // Solo el texto escrito (lo que se manda al servidor cuando es un mensaje de la persona).

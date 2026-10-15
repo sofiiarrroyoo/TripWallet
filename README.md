@@ -21,6 +21,7 @@ Copiloto de gastos de viaje multimoneda con IA. Le contás tus gastos como habl�
 | **US4** Registrar un gasto en lenguaje natural: el bot extrae los datos, pregunta si algo es ambiguo, convierte la moneda y muestra una tarjeta con opción de deshacer | Hecha |
 | **US5** Consultar gastos por categoría, por día o total, y cómo voy contra el presupuesto, con totales calculados por código | Hecha |
 | **US6** Calificar las respuestas del bot con pulgar arriba o abajo: la calificación se guarda, se puede cambiar y se ve al volver a entrar | Hecha |
+| **US7** Panel de debug: un interruptor "Modo debug" muestra, bajo cada respuesta del bot, las tools que llamó (con parámetros y resultado), el modelo y los tokens consumidos | Hecha |
 
 Cosas que conviene probar en el chat:
 
@@ -29,11 +30,13 @@ Cosas que conviene probar en el chat:
 - `¿Cuánto llevo gastado en comida?`, `¿Y ayer?`, `¿Cuánto me queda del presupuesto?`.
 - `Compré un souvenir por 20 dólares` (si no hay una categoría que encaje, propone crear una y espera tu confirmación).
 - Tocar el pulgar arriba o abajo debajo de una respuesta del bot para calificarla.
+- Activar "Modo debug" (arriba del chat) para ver qué tools usó el bot y cuántos tokens gastó en cada respuesta.
 
 ### Extras implementados
 
 - Streaming de las respuestas.
 - Sistema de feedback: pulgar arriba o abajo en cada respuesta del bot (US6).
+- Panel de debug con las tools llamadas, sus parámetros y resultados, y los tokens por respuesta (US7).
 - Límite de 30 mensajes por hora por usuario.
 - Tests con Vitest (más de 500, sobre servicios, validaciones, tools y flujo del chat).
 - Tool calling nativo y few-shot en los prompts.
@@ -137,15 +140,16 @@ Scripts: `npm run dev`, `npm run build`, `npm run lint`, `npm run test`, `npm ru
 
 La base de datos y parte de la lógica ya están preparadas (tablas `presupuestos_viaje` y `resumenes_viaje`, y las funciones `cerrar_viaje` y `reabrir_viaje`), pero estas historias no llegaron a implementarse.
 
-### US7 — Panel de debug
+### US8 — Cerrar un viaje y ver su resumen
 
-Como evaluador técnico, quiero ver qué tools llamó el bot, con qué parámetros y cuántos tokens usó, para entender cómo razona el sistema.
+Como viajero, quiero cerrar un viaje terminado y ver un resumen de lo que gasté, para entender en qué se me fue la plata.
 
-- Cada respuesta muestra las tools llamadas con sus parámetros y resultados.
-- Se ven los tokens consumidos por respuesta.
-- El panel se puede mostrar u ocultar.
+- Al cerrar se calculan y guardan total, total por categoría, promedio por día, comparación con el presupuesto y gastos más grandes.
+- Si hubo presupuesto previo, se ve lo planificado contra lo real por categoría.
+- Se guarda la foto de cotizaciones del día de cierre y el bot genera un resumen breve.
+- El viaje cerrado queda en solo lectura y se puede reabrir.
 
-### US8 — Estimar el presupuesto antes de viajar
+### US9 — Estimar el presupuesto antes de viajar
 
 Como viajero que está planificando un viaje, quiero que el bot me haga algunas preguntas y me arme un presupuesto estimado por categoría, para saber cuánta plata llevar y después controlar si me ajusto a lo planeado.
 
@@ -154,15 +158,6 @@ Como viajero que está planificando un viaje, quiero que el bot me haga algunas 
 - Cada categoría muestra el monto y los supuestos; los totales los calcula el sistema a partir de costos diarios.
 - Se estima en la moneda del destino y se muestra en la moneda base con la cotización usada.
 - Puedo editar los montos antes de aceptar; al aceptar queda como presupuesto por categoría del viaje.
-
-### US9 — Cerrar un viaje y ver su resumen
-
-Como viajero, quiero cerrar un viaje terminado y ver un resumen de lo que gasté, para entender en qué se me fue la plata.
-
-- Al cerrar se calculan y guardan total, total por categoría, promedio por día, comparación con el presupuesto y gastos más grandes.
-- Si hubo presupuesto previo, se ve lo planificado contra lo real por categoría.
-- Se guarda la foto de cotizaciones del día de cierre y el bot genera un resumen breve.
-- El viaje cerrado queda en solo lectura y se puede reabrir.
 
 ### Otras ideas
 
