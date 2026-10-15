@@ -4,7 +4,7 @@ import * as repositorio from "@/repositorios/calificaciones";
 import * as repositorioMensajes from "@/repositorios/mensajes";
 import type { Mensaje } from "@/tipos/mensaje";
 import type { Viaje } from "@/tipos/viaje";
-import { calificarRespuesta } from "./calificaciones";
+import { calificarRespuesta, obtenerCalificaciones } from "./calificaciones";
 import { obtenerViaje } from "./viajes";
 
 vi.mock("@/repositorios/calificaciones");
@@ -105,5 +105,25 @@ describe("calificarRespuesta", () => {
     await calificarRespuesta("viaje-1", ID_MENSAJE, { valor: -1 });
 
     expect(repositorio.guardarCalificacion).toHaveBeenCalledWith(ID_MENSAJE, -1);
+  });
+});
+
+describe("obtenerCalificaciones", () => {
+  it("devuelve un objeto con la calificación de cada mensaje calificado", async () => {
+    vi.mocked(repositorio.listarCalificaciones).mockResolvedValue(
+      new Map([
+        ["m-1", 1],
+        ["m-2", -1],
+      ]),
+    );
+
+    await expect(obtenerCalificaciones(["m-1", "m-2", "m-3"])).resolves.toEqual({ "m-1": 1, "m-2": -1 });
+    expect(repositorio.listarCalificaciones).toHaveBeenCalledWith(["m-1", "m-2", "m-3"]);
+  });
+
+  it("devuelve un objeto vacío si nada fue calificado", async () => {
+    vi.mocked(repositorio.listarCalificaciones).mockResolvedValue(new Map());
+
+    await expect(obtenerCalificaciones(["m-1"])).resolves.toEqual({});
   });
 });

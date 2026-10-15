@@ -17,6 +17,7 @@ import type { Mensaje } from "@/tipos/mensaje";
 import type { LlamadaTool } from "@/validaciones/mensajes";
 import type { Viaje } from "@/tipos/viaje";
 import { LIMITE_MENSAJES_POR_HORA, cargarChat, responderMensaje } from "./chat";
+import { obtenerCalificaciones } from "./calificaciones";
 import { listarCategorias } from "./categorias";
 import { consultarGastos } from "./consultaGastos";
 import { obtenerIdsGastosEliminados, registrarGasto } from "./gastos";
@@ -24,6 +25,7 @@ import { obtenerViaje } from "./viajes";
 
 vi.mock("@/repositorios/mensajes");
 vi.mock("./viajes");
+vi.mock("./calificaciones");
 vi.mock("./categorias");
 vi.mock("./consultaGastos");
 vi.mock("./gastos");
@@ -148,6 +150,7 @@ beforeEach(() => {
   vi.mocked(obtenerViaje).mockResolvedValue(viaje);
   vi.mocked(listarCategorias).mockResolvedValue(categorias);
   vi.mocked(obtenerIdsGastosEliminados).mockResolvedValue([]);
+  vi.mocked(obtenerCalificaciones).mockResolvedValue({});
   vi.mocked(repositorio.listarFechasMensajesUsuarioDesde).mockResolvedValue([]);
   vi.mocked(repositorio.listarUltimosMensajes).mockResolvedValue([mensaje("user", "hola")]);
   vi.mocked(repositorio.crearMensaje).mockImplementation(async (nuevo) => mensaje(nuevo.rol, nuevo.contenido));
@@ -357,6 +360,26 @@ describe("cargarChat", () => {
 
     await expect(cargarChat("ajeno")).rejects.toBeInstanceOf(ErrorNoEncontrado);
     expect(repositorio.listarUltimosMensajes).not.toHaveBeenCalled();
+  });
+
+  describe("calificaciones", () => {
+    it("pide las calificaciones solo de las respuestas del bot y las devuelve", async () => {
+      const respuesta = mensaje("assistant", "Listo");
+      vi.mocked(repositorio.listarUltimosMensajes).mockResolvedValue([mensaje("user", "hola"), respuesta]);
+      vi.mocked(obtenerCalificaciones).mockResolvedValue({ [respuesta.id]: -1 });
+
+      const chat = await cargarChat("viaje-1");
+
+      expect(obtenerCalificaciones).toHaveBeenCalledWith([respuesta.id]);
+      expect(chat.calificaciones).toEqual({ [respuesta.id]: -1 });
+    });
+
+    it("sin respuestas del bot no hay nada para calificar", async () => {
+      const chat = await cargarChat("viaje-1");
+
+      expect(obtenerCalificaciones).toHaveBeenCalledWith([]);
+      expect(chat.calificaciones).toEqual({});
+    });
   });
 
   describe("gastos eliminados", () => {
