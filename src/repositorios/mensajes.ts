@@ -53,6 +53,19 @@ export async function listarUltimosMensajes(viajeId: string, limite: number): Pr
   return data.map(aMensaje).reverse();
 }
 
+// null si el mensaje no existe en ese viaje (o no es del usuario: el RLS lo esconde).
+export async function obtenerMensaje(viajeId: string, mensajeId: string): Promise<Mensaje | null> {
+  const supabase = await crearClienteSupabase();
+  const { data, error } = await supabase
+    .from("mensajes")
+    .select(COLUMNAS)
+    .eq("viaje_id", viajeId)
+    .eq("id", mensajeId)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? aMensaje(data) : null;
+}
+
 export async function crearMensaje(mensaje: NuevoMensaje): Promise<Mensaje> {
   const supabase = await crearClienteSupabase();
   const { data, error } = await supabase

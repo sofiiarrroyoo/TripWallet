@@ -16,11 +16,13 @@ import { fechaIsoEn } from "@/lib/fechas";
 import * as repositorio from "@/repositorios/mensajes";
 import type { Mensaje } from "@/tipos/mensaje";
 import type { Viaje } from "@/tipos/viaje";
+import type { ValorCalificacion } from "@/validaciones/calificaciones";
 import { esquemaPedidoChat } from "@/validaciones/chat";
 import { esquemaResultadoRegistro } from "@/validaciones/gastos";
 import { type LlamadaTool, esquemaLlamadasTools } from "@/validaciones/mensajes";
 import { NOMBRE_TOOL_PEDIR_DATOS, esquemaPedirDatos, textoDePedirDatos } from "@/validaciones/pedirDatos";
 import { validar } from "@/validaciones/validar";
+import { obtenerCalificaciones } from "./calificaciones";
 import { listarCategorias } from "./categorias";
 import { obtenerIdsGastosEliminados } from "./gastos";
 import { obtenerViaje } from "./viajes";
@@ -49,13 +51,17 @@ export type ChatCargado = {
   mensajes: Mensaje[];
   // Gastos que tuvieron tarjeta y ya no existen: la tarjeta tiene que decir "Gasto eliminado".
   gastosEliminados: string[];
+  // La calificación (1 o -1) de las respuestas del bot que la persona ya calificó, por id de mensaje.
+  calificaciones: Record<string, ValorCalificacion>;
 };
 
 export async function cargarChat(viajeId: string): Promise<ChatCargado> {
   const viaje = await obtenerViaje(viajeId);
   const mensajes = await repositorio.listarUltimosMensajes(viaje.id, MENSAJES_VISIBLES);
   const gastosEliminados = await obtenerIdsGastosEliminados(viaje.id, idsDeGastosMostrados(mensajes));
-  return { viaje, mensajes, gastosEliminados };
+  const respuestasDelBot = mensajes.filter((mensaje) => mensaje.rol === "assistant").map((mensaje) => mensaje.id);
+  const calificaciones = await obtenerCalificaciones(respuestasDelBot);
+  return { viaje, mensajes, gastosEliminados, calificaciones };
 }
 
 // Cuenta los mensajes del usuario (en todos sus viajes) de la última hora. Si llegó al tope, calcula cuándo se

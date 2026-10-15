@@ -6,6 +6,7 @@ import { CircleAlert, RotateCw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/componentes/ui/alert";
 import { Button } from "@/componentes/ui/button";
+import type { ValorCalificacion } from "@/validaciones/calificaciones";
 import { actividadDelAsistente } from "./actividadDelAsistente";
 import { EntradaChat } from "./EntradaChat";
 import { IndicadorActividad } from "./IndicadorActividad";
@@ -20,6 +21,8 @@ type Props = {
   mensajesIniciales: UIMessage[];
   // Gastos que tuvieron tarjeta y ya no existen (los calcula el servidor al cargar la página).
   gastosEliminados: string[];
+  // La calificación (1 o -1) que la persona ya dio a cada respuesta del bot, por id de mensaje.
+  calificaciones: Record<string, ValorCalificacion>;
 };
 
 type Accion = "enviar" | "reintentar";
@@ -30,7 +33,14 @@ function fallaAntesDeGuardar(error: unknown): boolean {
   return APICallError.isInstance(error) || error instanceof TypeError;
 }
 
-export function ChatViaje({ viajeId, destino, viajeCerrado, mensajesIniciales, gastosEliminados }: Props) {
+export function ChatViaje({
+  viajeId,
+  destino,
+  viajeCerrado,
+  mensajesIniciales,
+  gastosEliminados,
+  calificaciones,
+}: Props) {
   const [texto, setTexto] = useState("");
   const [puedeReintentar, setPuedeReintentar] = useState(false);
   const [eliminadosPorLaPersona, setEliminadosPorLaPersona] = useState<ReadonlySet<string>>(
@@ -163,6 +173,8 @@ export function ChatViaje({ viajeId, destino, viajeCerrado, mensajesIniciales, g
             onGastoEliminado={marcarGastoEliminado}
             opcionesActivas={indice === mensajesVisibles.length - 1 && !respondiendo}
             onElegirOpcion={elegirOpcion}
+            calificacionInicial={calificaciones[mensaje.id] ?? null}
+            calificable={!(indice === mensajesVisibles.length - 1 && respondiendo)}
           />
         ))}
         {actividad && <IndicadorActividad etiqueta={actividad} />}
