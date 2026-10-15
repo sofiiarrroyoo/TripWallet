@@ -113,7 +113,23 @@ Scripts: `npm run dev`, `npm run build`, `npm run lint`, `npm run test`, `npm ru
 
 La base de datos y parte de la lógica ya están preparadas (tablas `calificaciones`, `presupuestos_viaje` y `resumenes_viaje`, y las funciones `cerrar_viaje` y `reabrir_viaje`), pero estas historias no llegaron a implementarse.
 
-### Estimar el presupuesto antes de viajar
+### US6 — Calificar las respuestas
+
+Como viajero, quiero marcar si una respuesta del bot me sirvió o no, para ayudar a mejorar el asistente.
+
+- Cada respuesta del bot tiene pulgar arriba y abajo.
+- La calificación se guarda y se puede cambiar.
+- Solo se pueden calificar respuestas de los propios viajes.
+
+### US7 — Panel de debug
+
+Como evaluador técnico, quiero ver qué tools llamó el bot, con qué parámetros y cuántos tokens usó, para entender cómo razona el sistema.
+
+- Cada respuesta muestra las tools llamadas con sus parámetros y resultados.
+- Se ven los tokens consumidos por respuesta.
+- El panel se puede mostrar u ocultar.
+
+### US8 — Estimar el presupuesto antes de viajar
 
 Como viajero que está planificando un viaje, quiero que el bot me haga algunas preguntas y me arme un presupuesto estimado por categoría, para saber cuánta plata llevar y después controlar si me ajusto a lo planeado.
 
@@ -123,7 +139,7 @@ Como viajero que está planificando un viaje, quiero que el bot me haga algunas 
 - Se estima en la moneda del destino y se muestra en la moneda base con la cotización usada.
 - Puedo editar los montos antes de aceptar; al aceptar queda como presupuesto por categoría del viaje.
 
-### Cerrar un viaje y ver su resumen
+### US9 — Cerrar un viaje y ver su resumen
 
 Como viajero, quiero cerrar un viaje terminado y ver un resumen de lo que gasté, para entender en qué se me fue la plata.
 
@@ -132,17 +148,8 @@ Como viajero, quiero cerrar un viaje terminado y ver un resumen de lo que gasté
 - Se guarda la foto de cotizaciones del día de cierre y el bot genera un resumen breve.
 - El viaje cerrado queda en solo lectura y se puede reabrir.
 
-### Calificar las respuestas
-
-Como viajero, quiero marcar si una respuesta del bot me sirvió o no, para ayudar a mejorar el asistente.
-
-- Cada respuesta del bot tiene pulgar arriba y abajo.
-- La calificación se guarda y se puede cambiar.
-- Solo se pueden calificar respuestas de los propios viajes.
-
 ### Otras ideas
 
-- Comparar viajes cerrados en la moneda que se elija, con gasto promedio por día.
-- Panel de debug con las tools llamadas, sus parámetros y los tokens por respuesta.
+- **US10:** comparar viajes cerrados en la moneda que se elija, con gasto promedio por día.
 - Tests end-to-end con Cypress.
 - Reintentar solo el resumen del modelo de un viaje cerrado, sin reabrirlo.

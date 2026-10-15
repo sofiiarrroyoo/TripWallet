@@ -11,7 +11,7 @@ import type {
 } from "@/tipos/resumen";
 
 // Cálculos puros, sin acceso a la base ni a ninguna API: los totales que ve la persona los saca el código, nunca el
-// modelo. Los usan la consulta del chat (US5) y, más adelante, el cierre del viaje (US7).
+// modelo. Los usan la consulta del chat (US5) y, más adelante, el cierre del viaje (US9).
 
 function porcentaje(parte: number, total: number): number {
   return total > 0 ? redondearAUnDecimal((parte / total) * 100) : 0;
