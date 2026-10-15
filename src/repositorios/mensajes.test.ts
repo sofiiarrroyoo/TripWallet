@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { crearMensaje, listarFechasMensajesUsuarioDesde, listarUltimosMensajes } from "./mensajes";
+import { crearMensaje, listarFechasMensajesUsuarioDesde, listarUltimosMensajes, obtenerMensaje } from "./mensajes";
 import { crearClienteSupabase } from "./supabase/clienteServidor";
 
 vi.mock("./supabase/clienteServidor", () => ({ crearClienteSupabase: vi.fn() }));
@@ -16,6 +16,7 @@ function consultaFalsa(resultado: Resultado) {
     limit: vi.fn(() => consulta),
     insert: vi.fn(() => consulta),
     single: vi.fn(async () => resultado),
+    maybeSingle: vi.fn(async () => resultado),
     then: (alResolver: (valor: Resultado) => unknown) => Promise.resolve(resultado).then(alResolver),
   };
   return consulta;
@@ -107,6 +108,32 @@ describe("listarUltimosMensajes", () => {
     usarConsulta({ data: [{ ...filaBot, llamadas_tools: [{ sinNombre: true }] }], error: null });
 
     await expect(listarUltimosMensajes("viaje-1", 20)).rejects.toThrow();
+  });
+});
+
+describe("obtenerMensaje", () => {
+  it("busca por viaje y por id, y devuelve el mensaje", async () => {
+    const { consulta } = usarConsulta({ data: filaBot, error: null });
+
+    const mensaje = await obtenerMensaje("viaje-1", "m-2");
+
+    expect(consulta.eq).toHaveBeenCalledWith("viaje_id", "viaje-1");
+    expect(consulta.eq).toHaveBeenCalledWith("id", "m-2");
+    expect(mensaje?.id).toBe("m-2");
+    expect(mensaje?.rol).toBe("assistant");
+  });
+
+  it("devuelve null si no existe", async () => {
+    usarConsulta({ data: null, error: null });
+
+    await expect(obtenerMensaje("viaje-1", "m-9")).resolves.toBeNull();
+  });
+
+  it("propaga el error de Supabase", async () => {
+    const error = new Error("falla de la base");
+    usarConsulta({ data: null, error });
+
+    await expect(obtenerMensaje("viaje-1", "m-2")).rejects.toBe(error);
   });
 });
 
