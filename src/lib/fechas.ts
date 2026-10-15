@@ -8,3 +8,12 @@ export function fechaIsoEn(instante: Date, zonaHoraria: string): string {
     timeZone: zonaHoraria,
   }).format(instante);
 }
+
+const MS_POR_DIA = 24 * 60 * 60 * 1000;
+
+// Cuántos días tiene un viaje de `inicio` a `fin` (AAAA-MM-DD), contando los dos extremos: del 10 al 12 son 3 días.
+// Se calcula en UTC para que el horario de verano no cambie la cuenta.
+export function diasEntre(inicio: string, fin: string): number {
+  const diferencia = Date.parse(`${fin}T00:00:00Z`) - Date.parse(`${inicio}T00:00:00Z`);
+  return Math.max(1, Math.round(diferencia / MS_POR_DIA) + 1);
+}
