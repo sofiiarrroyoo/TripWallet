@@ -145,7 +145,16 @@ Como evaluador técnico, quiero ver qué tools llamó el bot, con qué parámetr
 - Se ven los tokens consumidos por respuesta.
 - El panel se puede mostrar u ocultar.
 
-### US8 — Estimar el presupuesto antes de viajar
+### US8 — Cerrar un viaje y ver su resumen
+
+Como viajero, quiero cerrar un viaje terminado y ver un resumen de lo que gasté, para entender en qué se me fue la plata.
+
+- Al cerrar se calculan y guardan total, total por categoría, promedio por día, comparación con el presupuesto y gastos más grandes.
+- Si hubo presupuesto previo, se ve lo planificado contra lo real por categoría.
+- Se guarda la foto de cotizaciones del día de cierre y el bot genera un resumen breve.
+- El viaje cerrado queda en solo lectura y se puede reabrir.
+
+### US9 — Estimar el presupuesto antes de viajar
 
 Como viajero que está planificando un viaje, quiero que el bot me haga algunas preguntas y me arme un presupuesto estimado por categoría, para saber cuánta plata llevar y después controlar si me ajusto a lo planeado.
 
@@ -154,15 +163,6 @@ Como viajero que está planificando un viaje, quiero que el bot me haga algunas 
 - Cada categoría muestra el monto y los supuestos; los totales los calcula el sistema a partir de costos diarios.
 - Se estima en la moneda del destino y se muestra en la moneda base con la cotización usada.
 - Puedo editar los montos antes de aceptar; al aceptar queda como presupuesto por categoría del viaje.
-
-### US9 — Cerrar un viaje y ver su resumen
-
-Como viajero, quiero cerrar un viaje terminado y ver un resumen de lo que gasté, para entender en qué se me fue la plata.
-
-- Al cerrar se calculan y guardan total, total por categoría, promedio por día, comparación con el presupuesto y gastos más grandes.
-- Si hubo presupuesto previo, se ve lo planificado contra lo real por categoría.
-- Se guarda la foto de cotizaciones del día de cierre y el bot genera un resumen breve.
-- El viaje cerrado queda en solo lectura y se puede reabrir.
 
 ### Otras ideas
 
