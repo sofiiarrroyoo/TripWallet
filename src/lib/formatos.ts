@@ -32,3 +32,9 @@ export function formatearPorcentaje(porcentaje: number): string {
 export function formatearCotizacion(cotizacion: number): string {
   return new Intl.NumberFormat("es-AR", { maximumSignificantDigits: 6 }).format(cotizacion);
 }
+
+const formatoFechaCorta = new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "short", timeZone: "UTC" });
+
+export function formatearFechaCorta(fechaIso: string): string {
+  return formatoFechaCorta.format(aFecha(fechaIso));
+}
