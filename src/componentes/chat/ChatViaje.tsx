@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { APICallError, DefaultChatTransport, type UIMessage } from "ai";
-import { Bug, CircleAlert, RotateCw } from "lucide-react";
+import { CircleAlert, RotateCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/componentes/ui/alert";
@@ -12,6 +12,7 @@ import { actividadDelAsistente } from "./actividadDelAsistente";
 import { EntradaChat } from "./EntradaChat";
 import { IndicadorActividad } from "./IndicadorActividad";
 import { MensajeChat } from "./MensajeChat";
+import { useModoDebug } from "./ModoDebug";
 import { mensajeDeError } from "./mensajeDeError";
 import { cerroElViaje, gastosRegistradosDe, idsDeGastosEliminadosPorElChat, textoDe, textoVisible } from "./mensajesUI";
 
@@ -44,7 +45,7 @@ export function ChatViaje({
 }: Props) {
   const [texto, setTexto] = useState("");
   const [puedeReintentar, setPuedeReintentar] = useState(false);
-  const [modoDebug, setModoDebug] = useState(false);
+  const { activo: modoDebug } = useModoDebug();
   const router = useRouter();
   // Los cierres que ya se atendieron: los de antes de abrir la página no vuelven a recargarla.
   const [cierresAtendidos] = useState(() => new Set(mensajesIniciales.filter(cerroElViaje).map((mensaje) => mensaje.id)));
@@ -170,19 +171,6 @@ export function ChatViaje({
           <p>Contale cómo va el viaje y preguntame lo que necesites.</p>
         </div>
       )}
-
-      <div className="flex justify-end">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => setModoDebug((activo) => !activo)}
-          aria-pressed={modoDebug}
-          className="h-10 rounded-full px-4 aria-pressed:bg-foreground aria-pressed:text-background aria-pressed:hover:bg-foreground"
-        >
-          <Bug aria-hidden />
-          Modo debug
-        </Button>
-      </div>
 
       <div
         role="log"

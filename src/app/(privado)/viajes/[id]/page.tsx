@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { aMensajeUI } from "@/componentes/chat/mensajesUI";
 import { ChatViaje } from "@/componentes/chat/ChatViaje";
-import { AccionesViaje } from "@/componentes/viajes/AccionesViaje";
+import { ProveedorModoDebug } from "@/componentes/chat/ModoDebug";
+import { BarraViaje } from "@/componentes/viajes/BarraViaje";
 import { ResumenDelViaje } from "@/componentes/viajes/ResumenDelViaje";
-import { CLASES_TITULO_PAGINA, CuerpoPagina, EncabezadoPagina, EnlaceVolver } from "@/componentes/pagina/Pagina";
+import { CuerpoPagina } from "@/componentes/pagina/Pagina";
 import { ErrorNoEncontrado } from "@/errores";
-import { formatearMonto, formatearRangoFechas } from "@/lib/formatos";
-import { RUTA_INICIO_PRIVADO } from "@/lib/rutas";
+import { formatearMonto } from "@/lib/formatos";
 import { cargarChat } from "@/servicios/chat";
 import { obtenerResumenViaje } from "@/servicios/cierreViaje";
 
@@ -39,16 +39,9 @@ export default async function PaginaViaje({ params }: PageProps<"/viajes/[id]">)
   const resumen = viaje.estado === "cerrado" ? await obtenerResumenViaje(viaje.id) : null;
 
   return (
+    <ProveedorModoDebug>
     <section aria-labelledby="titulo-viaje">
-      <EncabezadoPagina>
-        <EnlaceVolver href={RUTA_INICIO_PRIVADO}>Mis viajes</EnlaceVolver>
-        <h1 id="titulo-viaje" className={CLASES_TITULO_PAGINA}>
-          {viaje.nombre}
-        </h1>
-        <p className="text-lg">
-          {viaje.destino} · {formatearRangoFechas(viaje.fechaInicio, viaje.fechaFin)}
-        </p>
-      </EncabezadoPagina>
+      <BarraViaje viaje={viaje} />
       <CuerpoPagina>
         <dl className="grid gap-5 rounded-md bg-foreground p-6 text-background sm:grid-cols-3">
           <Dato etiqueta="Moneda base" valor={viaje.monedaBase} />
@@ -62,7 +55,6 @@ export default async function PaginaViaje({ params }: PageProps<"/viajes/[id]">)
           />
           <Dato etiqueta="Estado" valor={viaje.estado === "abierto" ? "Abierto" : "Cerrado"} />
         </dl>
-        <AccionesViaje viajeId={viaje.id} estado={viaje.estado} />
         {viaje.estado === "cerrado" && <ResumenDelViaje resumen={resumen} />}
         <ChatViaje
           key={viaje.id}
@@ -75,5 +67,6 @@ export default async function PaginaViaje({ params }: PageProps<"/viajes/[id]">)
         />
       </CuerpoPagina>
     </section>
+    </ProveedorModoDebug>
   );
 }

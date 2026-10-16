@@ -69,7 +69,7 @@ export function AccionesViaje({ viajeId, estado }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="relative">
       {confirmando ? (
         <div
           ref={panel}
@@ -79,7 +79,7 @@ export function AccionesViaje({ viajeId, estado }: Props) {
           onKeyDown={(evento) => {
             if (evento.key === "Escape" && !enCurso) cancelar();
           }}
-          className="flex flex-col gap-3 rounded-md bg-muted p-4 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="absolute top-full right-0 z-40 mt-2 flex w-[min(22rem,calc(100vw-2.5rem))] flex-col gap-3 rounded-md border bg-card p-4 shadow-lg outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <p>{textos.pregunta}</p>
           <div className="flex flex-wrap gap-2">
@@ -97,34 +97,36 @@ export function AccionesViaje({ viajeId, estado }: Props) {
               Cancelar
             </Button>
           </div>
+          {error && (
+            <p role="alert" className="text-sm text-destructive">
+              {error}
+            </p>
+          )}
+          {enCurso && (
+            <p aria-hidden className="text-sm text-muted-foreground">
+              {textos.enCurso}
+            </p>
+          )}
         </div>
       ) : (
         <Button
           type="button"
           variant="outline"
           onClick={() => setConfirmando(true)}
-          className="h-10 self-start rounded-full px-4"
+          aria-label={textos.boton}
+          className="h-10 rounded-full px-3 sm:px-4"
         >
           {estado === "abierto" ? <Lock aria-hidden /> : <LockOpen aria-hidden />}
-          {textos.boton}
+          <span aria-hidden className="hidden sm:inline">
+            {textos.boton}
+          </span>
         </Button>
-      )}
-
-      {error && (
-        <p role="alert" className="text-sm text-destructive">
-          {error}
-        </p>
       )}
 
       {/* Región siempre presente: los lectores de pantalla solo anuncian cambios en regiones que ya existían. */}
       <p role="status" className="sr-only">
         {enCurso ? textos.enCurso : aviso}
       </p>
-      {enCurso && (
-        <p aria-hidden className="text-sm text-muted-foreground">
-          {textos.enCurso}
-        </p>
-      )}
     </div>
   );
 }
