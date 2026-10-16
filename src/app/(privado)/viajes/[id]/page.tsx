@@ -2,12 +2,15 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { aMensajeUI } from "@/componentes/chat/mensajesUI";
 import { ChatViaje } from "@/componentes/chat/ChatViaje";
-import { AccionesViaje } from "@/componentes/viajes/AccionesViaje";
+import { ProveedorModoDebug } from "@/componentes/chat/ModoDebug";
+import { BarraViaje } from "@/componentes/viajes/BarraViaje";
 import { ResumenDelViaje } from "@/componentes/viajes/ResumenDelViaje";
-import { CLASES_TITULO_PAGINA, CuerpoPagina, EncabezadoPagina, EnlaceVolver } from "@/componentes/pagina/Pagina";
+import { CuerpoPagina } from "@/componentes/pagina/Pagina";
 import { ErrorNoEncontrado } from "@/errores";
-import { formatearMonto, formatearRangoFechas } from "@/lib/formatos";
-import { RUTA_INICIO_PRIVADO } from "@/lib/rutas";
+import { PanelLateral } from "@/componentes/viajes/PanelLateral";
+import { ProveedorPanel } from "@/componentes/viajes/PanelEstadisticas";
+import { fechaIsoEn } from "@/lib/fechas";
+import { obtenerPanelViaje } from "@/servicios/panelViaje";
 import { cargarChat } from "@/servicios/chat";
 import { obtenerResumenViaje } from "@/servicios/cierreViaje";
 
@@ -22,48 +25,21 @@ async function buscarChat(id: string) {
   }
 }
 
-function Dato({ etiqueta, valor }: { etiqueta: string; valor: string }) {
-  return (
-    <div className="flex flex-col gap-1">
-      {/* Blanco al 70% sobre la tinta da 7:1: alcanza para texto secundario. */}
-      <dt className="text-sm text-background/70">{etiqueta}</dt>
-      <dd className="text-lg font-medium">{valor}</dd>
-    </div>
-  );
-}
-
 export default async function PaginaViaje({ params }: PageProps<"/viajes/[id]">) {
   const { id } = await params;
   const { viaje, mensajes, gastosEliminados, calificaciones } = await buscarChat(id);
   // El resumen solo existe mientras el viaje está cerrado.
   const resumen = viaje.estado === "cerrado" ? await obtenerResumenViaje(viaje.id) : null;
+  const panel = await obtenerPanelViaje(viaje, fechaIsoEn(new Date(), "UTC"));
 
   return (
-    <section aria-labelledby="titulo-viaje">
-      <EncabezadoPagina>
-        <EnlaceVolver href={RUTA_INICIO_PRIVADO}>Mis viajes</EnlaceVolver>
-        <h1 id="titulo-viaje" className={CLASES_TITULO_PAGINA}>
-          {viaje.nombre}
-        </h1>
-        <p className="text-lg">
-          {viaje.destino} · {formatearRangoFechas(viaje.fechaInicio, viaje.fechaFin)}
-        </p>
-      </EncabezadoPagina>
+    <ProveedorModoDebug>
+    <ProveedorPanel>
+    <section aria-labelledby="titulo-viaje" className="-mb-16 flex h-[calc(100dvh-4rem)] flex-col">
+      <BarraViaje viaje={viaje} />
+      <div className="flex min-h-0 flex-1">
+      <div data-scroll-chat className="min-h-0 min-w-0 flex-[11] overflow-y-auto">
       <CuerpoPagina>
-        <dl className="grid gap-5 rounded-md bg-foreground p-6 text-background sm:grid-cols-3">
-          <Dato etiqueta="Moneda base" valor={viaje.monedaBase} />
-          <Dato
-            etiqueta="Presupuesto"
-            valor={
-              viaje.presupuestoTotal === null
-                ? "Sin presupuesto"
-                : formatearMonto(viaje.presupuestoTotal, viaje.monedaBase)
-            }
-          />
-          <Dato etiqueta="Estado" valor={viaje.estado === "abierto" ? "Abierto" : "Cerrado"} />
-        </dl>
-        <AccionesViaje viajeId={viaje.id} estado={viaje.estado} />
-        {viaje.estado === "cerrado" && <ResumenDelViaje resumen={resumen} />}
         <ChatViaje
           key={viaje.id}
           viajeId={viaje.id}
@@ -74,6 +50,11 @@ export default async function PaginaViaje({ params }: PageProps<"/viajes/[id]">)
           calificaciones={calificaciones}
         />
       </CuerpoPagina>
+      </div>
+      <PanelLateral panel={panel} resumen={viaje.estado === "cerrado" ? <ResumenDelViaje resumen={resumen} /> : null} />
+      </div>
     </section>
+    </ProveedorPanel>
+    </ProveedorModoDebug>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { APICallError, DefaultChatTransport, type UIMessage } from "ai";
-import { Bug, CircleAlert, RotateCw } from "lucide-react";
+import { CircleAlert, RotateCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/componentes/ui/alert";
@@ -12,6 +12,7 @@ import { actividadDelAsistente } from "./actividadDelAsistente";
 import { EntradaChat } from "./EntradaChat";
 import { IndicadorActividad } from "./IndicadorActividad";
 import { MensajeChat } from "./MensajeChat";
+import { useModoDebug } from "./ModoDebug";
 import { mensajeDeError } from "./mensajeDeError";
 import { cerroElViaje, gastosRegistradosDe, idsDeGastosEliminadosPorElChat, textoDe, textoVisible } from "./mensajesUI";
 
@@ -44,7 +45,7 @@ export function ChatViaje({
 }: Props) {
   const [texto, setTexto] = useState("");
   const [puedeReintentar, setPuedeReintentar] = useState(false);
-  const [modoDebug, setModoDebug] = useState(false);
+  const { activo: modoDebug } = useModoDebug();
   const router = useRouter();
   // Los cierres que ya se atendieron: los de antes de abrir la página no vuelven a recargarla.
   const [cierresAtendidos] = useState(() => new Set(mensajesIniciales.filter(cerroElViaje).map((mensaje) => mensaje.id)));
@@ -79,6 +80,13 @@ export function ChatViaje({
     onError: (falla) => alFallar.current(falla),
   });
 
+  const cambiosEnGastos =
+    messages.reduce((suma, mensaje) => suma + gastosRegistradosDe(mensaje).length, 0) +
+    idsDeGastosEliminadosPorElChat(messages).length +
+    eliminadosPorLaPersona.size;
+  // Los cambios que ya tiene la página: los de antes de abrirla no la recargan.
+  const cambiosYaMostrados = useRef(cambiosEnGastos);
+
   useEffect(() => {
     mensajesActuales.current = messages;
     alFallar.current = (falla) => {
@@ -100,12 +108,16 @@ export function ChatViaje({
     };
   });
 
+  // Lo que scrollea es el contenedor de la página del viaje (la barra y el cuadro de texto quedan fijos), no la ventana.
   useEffect(() => {
+    const contenedor = finDeLaPagina.current?.closest<HTMLElement>("[data-scroll-chat]");
+    if (!contenedor) return;
     function alDesplazar() {
-      pegadoAlFinal.current = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 120;
+      if (!contenedor) return;
+      pegadoAlFinal.current = contenedor.scrollHeight - contenedor.scrollTop - contenedor.clientHeight <= 120;
     }
-    window.addEventListener("scroll", alDesplazar, { passive: true });
-    return () => window.removeEventListener("scroll", alDesplazar);
+    contenedor.addEventListener("scroll", alDesplazar, { passive: true });
+    return () => contenedor.removeEventListener("scroll", alDesplazar);
   }, []);
 
   // Si el bot cerró el viaje, la página se recarga para mostrar el resumen y bloquear el registro de gastos.
@@ -118,6 +130,16 @@ export function ChatViaje({
       }
     }
   }, [messages, status, router, cierresAtendidos]);
+
+  // Cada gasto que se registra o se borra (por el bot o con "Deshacer") cambia los números del panel lateral, que
+  // arma el servidor: se pide la página de nuevo cuando el bot terminó de responder.
+  useEffect(() => {
+    if (status !== "ready") return;
+    if (cambiosEnGastos !== cambiosYaMostrados.current) {
+      cambiosYaMostrados.current = cambiosEnGastos;
+      router.refresh();
+    }
+  }, [cambiosEnGastos, status, router]);
 
   // Sigue la conversación hacia abajo, salvo que la persona haya subido a leer algo anterior.
   useEffect(() => {
@@ -170,19 +192,6 @@ export function ChatViaje({
           <p>Contale cómo va el viaje y preguntame lo que necesites.</p>
         </div>
       )}
-
-      <div className="flex justify-end">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => setModoDebug((activo) => !activo)}
-          aria-pressed={modoDebug}
-          className="h-10 rounded-full px-4 aria-pressed:bg-foreground aria-pressed:text-background aria-pressed:hover:bg-foreground"
-        >
-          <Bug aria-hidden />
-          Modo debug
-        </Button>
-      </div>
 
       <div
         role="log"

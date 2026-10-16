@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatearCotizacion, formatearMonto, formatearPorcentaje, formatearRangoFechas } from "./formatos";
+import { formatearCotizacion, formatearFechaCorta, formatearMonto, formatearPorcentaje, formatearRangoFechas } from "./formatos";
 
 // Intl usa espacios especiales (no separables) que no importan para estos tests.
 function normalizarEspacios(texto: string): string {
@@ -48,5 +48,12 @@ describe("formatearCotizacion", () => {
     [1, "1"],
   ])("formatea %s como %s", (cotizacion, esperado) => {
     expect(normalizarEspacios(formatearCotizacion(cotizacion))).toBe(esperado);
+  });
+});
+
+describe("formatearFechaCorta", () => {
+  it("muestra día y mes, sin que la zona horaria la corra un día", () => {
+    expect(normalizarEspacios(formatearFechaCorta("2026-11-01"))).toBe("1 nov");
+    expect(normalizarEspacios(formatearFechaCorta("2026-12-31"))).toBe("31 dic");
   });
 });

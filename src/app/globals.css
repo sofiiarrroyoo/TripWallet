@@ -12,6 +12,7 @@
   --color-escenario: var(--escenario);
   --color-escenario-foreground: var(--escenario-foreground);
   --color-globo-asistente: var(--globo-asistente);
+  --color-barra: var(--barra);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -50,34 +51,36 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* Gris #6e6e6e solo sobre blanco o #f3f3f3: sobre la menta no llega al contraste AA. */
+/* Verde azulado + salvia sobre blanco hueso. Gris #566562 solo sobre blanco, #f6f6f2 o #eef0ea: sobre la salvia
+   no llega al contraste AA. */
 :root {
-  --background: #ffffff;
-  --foreground: #232323;
+  --background: #f6f6f2;
+  --foreground: #1c2b29;
   --card: #ffffff;
-  --card-foreground: #232323;
+  --card-foreground: #1c2b29;
   --popover: #ffffff;
-  --popover-foreground: #232323;
-  --primary: #232323;
+  --popover-foreground: #1c2b29;
+  --primary: #0f4f4b;
   --primary-foreground: #ffffff;
-  --secondary: #f3f3f3;
-  --secondary-foreground: #232323;
-  --muted: #f3f3f3;
-  --muted-foreground: #6e6e6e;
-  --accent: #a1ffcb;
-  --accent-foreground: #232323;
-  --escenario: #a1ffcb;
-  --escenario-foreground: #232323;
-  --globo-asistente: #efefef;
+  --secondary: #eef0ea;
+  --secondary-foreground: #1c2b29;
+  --muted: #eef0ea;
+  --muted-foreground: #566562;
+  --accent: #dbe8d9;
+  --accent-foreground: #1c2b29;
+  --escenario: #dbe8d9;
+  --escenario-foreground: #1c2b29;
+  --globo-asistente: #e9eee6;
+  --barra: #e8ebe2;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: #e4e4e4;
-  --input: #8a8a8a;
-  --ring: #232323;
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --border: #dfe3dc;
+  --input: #7d8a86;
+  --ring: #0f4f4b;
+  --chart-1: #0f4f4b;
+  --chart-2: #4f7a53;
+  --chart-3: #8fb08c;
+  --chart-4: #c2d6bf;
+  --chart-5: #1c2b29;
   --radius: 0.25rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);

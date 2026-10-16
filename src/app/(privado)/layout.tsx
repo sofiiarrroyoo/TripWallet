@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BotonCerrarSesion } from "@/componentes/autenticacion/BotonCerrarSesion";
-import { MARGENES_PAGINA } from "@/componentes/pagina/Pagina";
+import { ALTO_CABECERA, MARGENES_PAGINA } from "@/componentes/pagina/Pagina";
 import { RUTA_INGRESAR, RUTA_INICIO_PRIVADO } from "@/lib/rutas";
 import { obtenerUsuarioActual } from "@/servicios/autenticacion";
 
@@ -12,7 +12,7 @@ export default async function LayoutPrivado({ children }: LayoutProps<"/">) {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className={`flex items-center justify-between gap-4 py-4 ${MARGENES_PAGINA}`}>
+      <header className={`flex items-center justify-between gap-4 ${ALTO_CABECERA} ${MARGENES_PAGINA}`}>
         <Link href={RUTA_INICIO_PRIVADO} className="text-lg font-semibold tracking-tight">
           TripWallet
         </Link>
