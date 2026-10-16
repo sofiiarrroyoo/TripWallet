@@ -5,6 +5,8 @@ import { CLASES_TITULO_PAGINA, CuerpoPagina, EncabezadoPagina } from "@/componen
 import { Button } from "@/componentes/ui/button";
 import { ItemViaje } from "@/componentes/viajes/ItemViaje";
 import { RUTA_NUEVO_VIAJE } from "@/lib/rutas";
+import { fechaIsoEn } from "@/lib/fechas";
+import { ordenarViajesParaLista } from "@/servicios/estadoViaje";
 import { listarViajes } from "@/servicios/viajes";
 
 export const metadata: Metadata = { title: "Mis viajes" };
@@ -21,7 +23,8 @@ function BotonNuevoViaje({ texto }: { texto: string }) {
 }
 
 export default async function PaginaViajes() {
-  const viajes = await listarViajes();
+  const hoy = fechaIsoEn(new Date(), "UTC");
+  const viajes = ordenarViajesParaLista(await listarViajes(), hoy);
 
   if (viajes.length === 0) {
     return (
@@ -43,7 +46,7 @@ export default async function PaginaViajes() {
 
   return (
     <section aria-labelledby="titulo-viajes">
-      <EncabezadoPagina>
+      <EncabezadoPagina compacto ancho="max-w-6xl">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <h1 id="titulo-viajes" className={CLASES_TITULO_PAGINA}>
             Mis viajes
@@ -51,11 +54,11 @@ export default async function PaginaViajes() {
           <BotonNuevoViaje texto="Nuevo viaje" />
         </div>
       </EncabezadoPagina>
-      <CuerpoPagina>
-        <ul className="flex flex-col gap-3">
+      <CuerpoPagina ancho="max-w-6xl">
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {viajes.map((viaje) => (
             <li key={viaje.id}>
-              <ItemViaje viaje={viaje} />
+              <ItemViaje viaje={viaje} hoy={hoy} />
             </li>
           ))}
         </ul>
