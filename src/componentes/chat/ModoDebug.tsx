@@ -31,7 +31,7 @@ export function BotonModoDebug() {
       onClick={alternar}
       aria-pressed={activo}
       aria-label="Modo debug"
-      className="h-10 rounded-full px-3 aria-pressed:bg-accent aria-pressed:text-accent-foreground aria-pressed:hover:bg-accent sm:px-4"
+      className="h-10 rounded-full px-3 aria-pressed:bg-primary aria-pressed:text-primary-foreground aria-pressed:hover:bg-primary sm:px-4"
     >
       <Bug aria-hidden />
       <span aria-hidden className="hidden sm:inline">
