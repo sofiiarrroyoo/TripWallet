@@ -1,13 +1,10 @@
 import { formatearFechaCorta, formatearMonto } from "@/lib/formatos";
 import type { PanelViaje } from "@/tipos/panel";
+import { SeccionPlegable } from "./SeccionPlegable";
 
 export function UltimosGastos({ panel }: { panel: PanelViaje }) {
   return (
-    <section aria-labelledby="titulo-ultimos" className="flex flex-col gap-3 rounded-2xl bg-card p-4 ring-1 ring-foreground/10">
-      <h2 id="titulo-ultimos" className="font-medium">
-        Últimos gastos
-      </h2>
-
+    <SeccionPlegable titulo="Últimos gastos">
       {panel.ultimosGastos.length === 0 ? (
         <p className="text-sm text-muted-foreground">Todavía no hay gastos registrados.</p>
       ) : (
@@ -25,6 +22,6 @@ export function UltimosGastos({ panel }: { panel: PanelViaje }) {
           ))}
         </ul>
       )}
-    </section>
+    </SeccionPlegable>
   );
 }

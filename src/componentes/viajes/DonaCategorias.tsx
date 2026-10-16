@@ -1,6 +1,7 @@
 import { formatearMonto, formatearPorcentaje } from "@/lib/formatos";
 import { redondearAUnDecimal, sumarMontos } from "@/lib/numeros";
 import type { PanelViaje } from "@/tipos/panel";
+import { SeccionPlegable } from "./SeccionPlegable";
 
 // Cuántas categorías se muestran por separado; el resto se junta en "Otras" para que cada color se distinga.
 const CATEGORIAS_VISIBLES = 5;
@@ -30,11 +31,7 @@ function armarPorciones(panel: PanelViaje): Porcion[] {
 export function DonaCategorias({ panel }: { panel: PanelViaje }) {
   const porciones = armarPorciones(panel);
   return (
-    <section aria-labelledby="titulo-dona" className="flex flex-col gap-4 rounded-2xl bg-card p-4 ring-1 ring-foreground/10">
-      <h2 id="titulo-dona" className="font-medium">
-        Gastos por categoría
-      </h2>
-
+    <SeccionPlegable titulo="Gastos por categoría">
       {porciones.length === 0 ? (
         <p className="text-sm text-muted-foreground">Cuando registres gastos, vas a ver acá en qué se va la plata.</p>
       ) : (
@@ -70,6 +67,6 @@ export function DonaCategorias({ panel }: { panel: PanelViaje }) {
           </ul>
         </>
       )}
-    </section>
+    </SeccionPlegable>
   );
 }
