@@ -3,7 +3,7 @@
 Copiloto de gastos de viaje multimoneda con IA. Le contás tus gastos como hablás ("pagué 15 lucas chilenas la cena"), los convierte a la moneda de tu viaje y te dice cómo venís contra el presupuesto.
 
 - **App en producción:** https://tripwallet-sofia.vercel.app
-- **Cuenta demo** (con viajes y gastos cargados): `coka123@mail.com` / `LosBeatles00t`
+- **Cuenta demo** (con viajes y gastos cargados): `coquito@gmail.com` / `Argentina2`
 
 ## Definición del producto
 
@@ -30,9 +30,9 @@ Cosas que conviene probar en el chat:
 - `Gasté 3000 pesos en el taxi` (es ambiguo: pregunta qué pesos, con botones).
 - `¿Cuánto llevo gastado en comida?`, `¿Y ayer?`, `¿Cuánto me queda del presupuesto?`.
 - `Compré un souvenir por 20 dólares` (si no hay una categoría que encaje, propone crear una y espera tu confirmación).
-- `Cerrá el viaje` (pide confirmación con botones, cierra el viaje y muestra el resumen). También se puede cerrar y reabrir con los botones de la pantalla del viaje.
+- `Cerrá el viaje` (pide confirmación con botones, cierra el viaje y muestra el resumen). También se puede cerrar y reabrir con el botón de la barra del viaje.
 - Tocar el pulgar arriba o abajo debajo de una respuesta del bot para calificarla.
-- Activar "Modo debug" (arriba del chat) para ver qué tools usó el bot y cuántos tokens gastó en cada respuesta.
+- Activar "Modo debug" (en la barra del viaje) para ver qué tools usó el bot y cuántos tokens gastó en cada respuesta.
 
 ### Extras implementados
 
@@ -41,10 +41,33 @@ Cosas que conviene probar en el chat:
 - Panel de debug con las tools llamadas, sus parámetros y resultados, y los tokens por respuesta (US7).
 - Salida estructurada: el resumen del viaje se pide al modelo con un esquema de Zod (titular y puntos) y se valida antes de guardarlo (US8).
 - Límite de 30 mensajes por hora por usuario.
-- Tests con Vitest (más de 500, sobre servicios, validaciones, tools y flujo del chat).
+- Tests con Vitest (más de 700, sobre servicios, validaciones, tools y flujo del chat).
 - Tool calling nativo y few-shot en los prompts.
-- Accesibilidad: etiquetas ARIA, `aria-live` en el chat, navegación por teclado y foco visible.
+- Accesibilidad: etiquetas ARIA, `aria-live` en el chat, navegación por teclado, foco visible y secciones minimizables con `<details>` nativo.
 - Cada mensaje del bot guarda las tools que llamó, el modelo y los tokens usados.
+
+## Interfaz
+
+- **Pantalla del viaje:** una barra fija arriba (volver, título y fechas, modo debug y cerrar o reabrir el viaje) y el chat con scroll propio, así que el cuadro de texto y las acciones siempre quedan a mano.
+- **Panel de estadísticas** (en escritorio, a la derecha del chat): lo gastado, cuánto queda del presupuesto, el promedio por día, la dona de gastos por categoría y los últimos gastos. Se actualiza solo cuando el bot registra o borra un gasto, o al tocar "Deshacer". "Gastos por categoría", "Últimos gastos" y, con el viaje cerrado, el "Resumen del viaje" se pueden minimizar.
+- **En celular** se ve solo el chat; el botón "Estadísticas" de la barra abre el mismo panel como hoja a pantalla completa.
+- **Mis viajes:** tarjetas con el estado del viaje (en curso, próximo, sin cerrar o cerrado), en qué día va o cuánto falta, y orden por situación.
+
+## Capturas
+
+Las imágenes están en `docs/img/`.
+
+| Pantalla | Captura |
+| --- | --- |
+| Ingreso | ![Ingreso](docs/img/01-ingreso.png) |
+| Mis viajes | ![Mis viajes](docs/img/02-mis-viajes.png) |
+| Nuevo viaje | ![Nuevo viaje](docs/img/03-nuevo-viaje.png) |
+| Viaje: chat y panel de estadísticas | ![Viaje con chat y panel](docs/img/04-viaje-chat-y-panel.png) |
+| Registrar un gasto por chat (GIF) | ![Registrar un gasto](docs/img/05-registrar-gasto.gif) |
+| Modo debug | ![Modo debug](docs/img/06-modo-debug.png) |
+| Resumen de un viaje cerrado | ![Resumen del viaje cerrado](docs/img/07-resumen-viaje-cerrado.png) |
+| Celular: chat | ![Chat en celular](docs/img/08-celular-chat.png) |
+| Celular: estadísticas | ![Estadísticas en celular](docs/img/09-celular-estadisticas.png) |
 
 ## Arquitectura
 
@@ -74,6 +97,7 @@ Decisiones principales:
 - **Seguridad en la base:** RLS en todas las tablas, y `supabase-js` siempre corre con la sesión de la persona. La clave secreta de Supabase no se usa. La sesión viaja en cookies `httpOnly` y el navegador nunca habla directo con Supabase.
 - **Cotizaciones:** [open.er-api.com](https://open.er-api.com) con timeout, reintentos con backoff, caché diaria en la base y, si la API falla, última cotización guardada con aviso. Si no hay ninguna, no se guarda el gasto.
 - **Historial en el servidor:** el modelo recibe los últimos 20 mensajes más el contexto del viaje (moneda base, presupuesto, categorías, fecha de hoy y zona horaria). El servidor guarda cada mensaje antes de llamar al modelo.
+- **Panel de estadísticas:** los números salen de `servicios/panelViaje.ts` (funciones puras con tests, sobre los mismos cálculos de la consulta del chat) y la página los arma en el servidor. Cuando el bot registra o borra un gasto, el chat pide la página de nuevo con `router.refresh()`: el navegador nunca calcula ni consulta la base. Los gráficos (la dona y las barras) son SVG y CSS propios, sin librería, y el dato siempre está también escrito.
 - **Gastos de viajes cerrados:** un trigger en la base los bloquea, además de la validación en los servicios.
 - **Cierre de viaje:** las estadísticas las calcula el código (reutilizando los cálculos de la consulta del chat) y el modelo solo redacta el resumen. Cerrar es una transacción de Postgres (`cerrar_viaje`) que comprueba que los gastos usados sigan siendo todos los del viaje: si cambiaron mientras se armaba el resumen, se recalcula y se reintenta hasta 3 veces. El resumen del modelo tiene un límite de 20 segundos y, si falla, el viaje se cierra igual sin texto. Sin cotizaciones (ni de hoy ni guardadas) no se cierra.
 
@@ -138,7 +162,8 @@ Scripts: `npm run dev`, `npm run build`, `npm run lint`, `npm run test`, `npm ru
 - Por chat solo se puede eliminar el último gasto cargado, y el viaje se cierra pero no se reabre (eso se hace con el botón de la pantalla).
 - Cerrar el viaje desde el chat pide confirmación por instrucción del prompt, no por código: es reversible (se puede reabrir), así que se consideró suficiente.
 - Al reabrir un viaje se borra su resumen y al volver a cerrarlo se genera uno nuevo (así nunca queda desactualizado). El texto del resumen no se puede reintentar sin reabrir.
-- El promedio por día se calcula sobre los días del viaje (de inicio a fin), no sobre los días con gastos.
+- El promedio por día se calcula sobre los días del viaje (de inicio a fin), no sobre los días con gastos. Con el viaje abierto, el panel promedia sobre los días que ya pasaron.
+- La fecha de "hoy" de la lista de viajes y del panel se toma en UTC en el servidor: cerca de la medianoche puede diferir un día de la zona horaria de la persona.
 - Los montos se guardan con 2 decimales: monedas con 3 (por ejemplo el dinar kuwaití) pierden el último.
 - Las respuestas del bot se muestran como texto plano, sin Markdown.
 - El registro avisa si un email ya tiene cuenta (sin confirmación de email es inevitable; se priorizó un mensaje útil).
@@ -169,4 +194,5 @@ Como viajero, quiero comparar mis viajes cerrados en la moneda que elija, para s
 ### Otras ideas
 
 - Tests end-to-end con Cypress.
+- Mapa del destino en el panel del viaje y un gráfico con todos los viajes (requiere geocodificar el destino y, para comparar gastos, convertir monedas como en la US10).
 - Reintentar solo el resumen del modelo de un viaje cerrado, sin reabrirlo.
