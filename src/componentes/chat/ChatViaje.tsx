@@ -80,6 +80,13 @@ export function ChatViaje({
     onError: (falla) => alFallar.current(falla),
   });
 
+  const cambiosEnGastos =
+    messages.reduce((suma, mensaje) => suma + gastosRegistradosDe(mensaje).length, 0) +
+    idsDeGastosEliminadosPorElChat(messages).length +
+    eliminadosPorLaPersona.size;
+  // Los cambios que ya tiene la página: los de antes de abrirla no la recargan.
+  const cambiosYaMostrados = useRef(cambiosEnGastos);
+
   useEffect(() => {
     mensajesActuales.current = messages;
     alFallar.current = (falla) => {
@@ -123,6 +130,16 @@ export function ChatViaje({
       }
     }
   }, [messages, status, router, cierresAtendidos]);
+
+  // Cada gasto que se registra o se borra (por el bot o con "Deshacer") cambia los números del panel lateral, que
+  // arma el servidor: se pide la página de nuevo cuando el bot terminó de responder.
+  useEffect(() => {
+    if (status !== "ready") return;
+    if (cambiosEnGastos !== cambiosYaMostrados.current) {
+      cambiosYaMostrados.current = cambiosEnGastos;
+      router.refresh();
+    }
+  }, [cambiosEnGastos, status, router]);
 
   // Sigue la conversación hacia abajo, salvo que la persona haya subido a leer algo anterior.
   useEffect(() => {
