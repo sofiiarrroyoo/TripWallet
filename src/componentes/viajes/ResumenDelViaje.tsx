@@ -2,28 +2,19 @@ import { CircleAlert } from "lucide-react";
 import { formatearMonto, formatearPorcentaje, formatearRangoFechas } from "@/lib/formatos";
 import type { ResumenViaje } from "@/tipos/cierre";
 import { BarraProgreso } from "./BarraProgreso";
+import { SeccionPlegable } from "./SeccionPlegable";
 import { partesDeResumen } from "./textoResumen";
 
 type Props = { resumen: ResumenViaje | null };
-
-function Estadistica({ etiqueta, valor, detalle }: { etiqueta: string; valor: string; detalle?: string }) {
-  return (
-    <div className="flex flex-col gap-1 rounded-2xl bg-card shadow-sm ring-1 ring-foreground/10 p-4">
-      <dt className="text-sm text-muted-foreground">{etiqueta}</dt>
-      <dd className="text-xl font-semibold tracking-tight tabular-nums">{valor}</dd>
-      {detalle && <dd className="text-sm text-muted-foreground">{detalle}</dd>}
-    </div>
-  );
-}
 
 // El resumen de un viaje cerrado. Todos los números salen de las estadísticas calculadas y guardadas al cerrar; el
 // texto del modelo es solo la redacción. Las barras son decorativas: cada dato está también escrito.
 export function ResumenDelViaje({ resumen }: Props) {
   if (!resumen) {
     return (
-      <p role="status" className="rounded-2xl bg-card shadow-sm ring-1 ring-foreground/10 p-4">
-        No encontramos el resumen de este viaje. Probá reabrirlo y cerrarlo de nuevo.
-      </p>
+      <SeccionPlegable titulo="Resumen del viaje">
+        <p role="status">No encontramos el resumen de este viaje. Probá reabrirlo y cerrarlo de nuevo.</p>
+      </SeccionPlegable>
     );
   }
 
@@ -33,11 +24,9 @@ export function ResumenDelViaje({ resumen }: Props) {
   const { presupuesto } = estadisticas;
 
   return (
-    <section aria-labelledby="titulo-resumen" className="flex flex-col gap-8">
+    <SeccionPlegable titulo="Resumen del viaje">
+      <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
-        <h2 id="titulo-resumen" className="text-2xl font-semibold tracking-tight">
-          Resumen del viaje
-        </h2>
         {redaccion ? (
           <>
             <p className="text-lg font-medium text-balance">{redaccion.titular}</p>
@@ -50,32 +39,19 @@ export function ResumenDelViaje({ resumen }: Props) {
             )}
           </>
         ) : (
-          <p className="flex items-start gap-2 rounded-2xl bg-card shadow-sm ring-1 ring-foreground/10 p-4">
+          <p className="flex items-start gap-2 rounded-2xl bg-muted p-4">
             <CircleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />
             No pudimos generar el texto del resumen, pero los números están acá abajo.
           </p>
         )}
       </div>
 
-      <dl className="grid gap-3 sm:grid-cols-3">
-        <Estadistica etiqueta="Total gastado" valor={monto(estadisticas.total)} />
-        <Estadistica
-          etiqueta="Gastos registrados"
-          valor={String(estadisticas.cantidadGastos)}
-        />
-        <Estadistica
-          etiqueta="Promedio por día"
-          valor={monto(estadisticas.promedioPorDia)}
-          detalle={`En ${estadisticas.diasDelViaje} ${estadisticas.diasDelViaje === 1 ? "día" : "días"} de viaje`}
-        />
-      </dl>
-
       {presupuesto && (
         <section aria-labelledby="titulo-planificado" className="flex flex-col gap-4">
           <h3 id="titulo-planificado" className="text-xl font-semibold tracking-tight">
             Planificado contra real
           </h3>
-          <div className="flex flex-col gap-2 rounded-2xl bg-card shadow-sm ring-1 ring-foreground/10 p-4">
+          <div className="flex flex-col gap-2 rounded-2xl bg-muted p-4">
             <p className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
               <span>
                 Gastaste <strong className="tabular-nums">{monto(presupuesto.gastado)}</strong> de{" "}
@@ -171,7 +147,7 @@ export function ResumenDelViaje({ resumen }: Props) {
             {estadisticas.gastosMasGrandes.map((gasto) => (
               <li
                 key={gasto.id}
-                className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 rounded-2xl bg-card shadow-sm ring-1 ring-foreground/10 px-4 py-3"
+                className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 rounded-2xl bg-muted px-4 py-3"
               >
                 <span className="flex flex-col">
                   <span className="font-medium">{gasto.descripcion}</span>
@@ -198,6 +174,7 @@ export function ResumenDelViaje({ resumen }: Props) {
         . Fuente: {cotizacionesCierre.fuente}.
         {cotizacionesCierre.desactualizada && " No se pudo consultar la cotización de hoy y se usó la última guardada."}
       </p>
-    </section>
+      </div>
+    </SeccionPlegable>
   );
 }

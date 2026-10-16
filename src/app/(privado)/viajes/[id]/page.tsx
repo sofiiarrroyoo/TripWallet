@@ -40,7 +40,6 @@ export default async function PaginaViaje({ params }: PageProps<"/viajes/[id]">)
       <div className="flex min-h-0 flex-1">
       <div data-scroll-chat className="min-h-0 min-w-0 flex-[11] overflow-y-auto">
       <CuerpoPagina>
-        {viaje.estado === "cerrado" && <ResumenDelViaje resumen={resumen} />}
         <ChatViaje
           key={viaje.id}
           viajeId={viaje.id}
@@ -52,7 +51,7 @@ export default async function PaginaViaje({ params }: PageProps<"/viajes/[id]">)
         />
       </CuerpoPagina>
       </div>
-      <PanelLateral panel={panel} />
+      <PanelLateral panel={panel} resumen={viaje.estado === "cerrado" ? <ResumenDelViaje resumen={resumen} /> : null} />
       </div>
     </section>
     </ProveedorPanel>
