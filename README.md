@@ -60,6 +60,7 @@ Las imágenes están en `docs/img/`.
 | Pantalla | Captura |
 | --- | --- |
 | Ingreso | ![Ingreso](docs/img/ingresar.png) |
+| Ingreso con la cuenta demo | ![Cuenta demo](docs/img/cuenta%20demo.png) |
 | Mis viajes | ![Mis viajes](docs/img/mis%20viajes.png) |
 | Nuevo viaje | ![Nuevo viaje](docs/img/nuevo%20viaje.png) |
 | Viaje: chat y panel de estadísticas | ![Viaje con chat y panel](docs/img/chat%20y%20estadisticas.png) |
