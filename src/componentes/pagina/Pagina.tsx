@@ -13,24 +13,44 @@ const ENTRADA = "animate-in fade-in slide-in-from-bottom-4 animation-duration-50
 
 // Campo menta a todo el ancho con la esquina cortada, el mismo recurso que el panel del ingreso. Sobre la menta
 // todo el texto va en el color de tinta (el gris no llega al contraste AA).
-export function EncabezadoPagina({ children, className }: { children: ReactNode; className?: string }) {
+export function EncabezadoPagina({
+  children,
+  className,
+  ancho = "max-w-3xl",
+  compacto = false,
+}: {
+  children: ReactNode;
+  className?: string;
+  // Clase de ancho máximo del contenido (para alinearlo con un cuerpo más ancho).
+  ancho?: string;
+  compacto?: boolean;
+}) {
   return (
     <div
       className={cn(
-        "corte-diagonal bg-escenario pt-20 pb-10 text-escenario-foreground lg:pt-28 lg:pb-14",
+        "corte-diagonal bg-escenario text-escenario-foreground",
+        compacto ? "pt-16 pb-8 lg:pt-20 lg:pb-10" : "pt-20 pb-10 lg:pt-28 lg:pb-14",
         MARGENES_PAGINA,
         className,
       )}
     >
-      <div className={cn("flex max-w-3xl flex-col gap-4", ENTRADA)}>{children}</div>
+      <div className={cn("flex flex-col gap-4", ancho, ENTRADA)}>{children}</div>
     </div>
   );
 }
 
-export function CuerpoPagina({ children, className }: { children: ReactNode; className?: string }) {
+export function CuerpoPagina({
+  children,
+  className,
+  ancho = "max-w-3xl",
+}: {
+  children: ReactNode;
+  className?: string;
+  ancho?: string;
+}) {
   return (
     <div className={cn("pt-10", MARGENES_PAGINA, ENTRADA, "delay-150 fill-mode-both", className)}>
-      <div className="flex max-w-3xl flex-col gap-8">{children}</div>
+      <div className={cn("flex flex-col gap-8", ancho)}>{children}</div>
     </div>
   );
 }
