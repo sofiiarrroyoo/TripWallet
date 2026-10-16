@@ -59,15 +59,14 @@ Las imágenes están en `docs/img/`.
 
 | Pantalla | Captura |
 | --- | --- |
-| Ingreso | ![Ingreso](docs/img/01-ingreso.png) |
-| Mis viajes | ![Mis viajes](docs/img/02-mis-viajes.png) |
-| Nuevo viaje | ![Nuevo viaje](docs/img/03-nuevo-viaje.png) |
-| Viaje: chat y panel de estadísticas | ![Viaje con chat y panel](docs/img/04-viaje-chat-y-panel.png) |
-| Registrar un gasto por chat (GIF) | ![Registrar un gasto](docs/img/05-registrar-gasto.gif) |
-| Modo debug | ![Modo debug](docs/img/06-modo-debug.png) |
-| Resumen de un viaje cerrado | ![Resumen del viaje cerrado](docs/img/07-resumen-viaje-cerrado.png) |
-| Celular: chat | ![Chat en celular](docs/img/08-celular-chat.png) |
-| Celular: estadísticas | ![Estadísticas en celular](docs/img/09-celular-estadisticas.png) |
+| Ingreso | ![Ingreso](docs/img/ingresar.png) |
+| Mis viajes | ![Mis viajes](docs/img/mis%20viajes.png) |
+| Nuevo viaje | ![Nuevo viaje](docs/img/nuevo%20viaje.png) |
+| Viaje: chat y panel de estadísticas | ![Viaje con chat y panel](docs/img/chat%20y%20estadisticas.png) |
+| Panel: más estadísticas y últimos gastos | ![Más estadísticas](docs/img/mas%20estadisticas%20de%20ultimos%20gastos.png) |
+| Modo debug | ![Modo debug](docs/img/debug%20mode.png) |
+| Resumen de un viaje cerrado | ![Resumen del viaje cerrado](docs/img/resumen%20viaje.png) |
+| Resumen de un viaje cerrado: más detalle | ![Más detalle del resumen](docs/img/mas%20detalles%20de%20resumen%20viaje.png) |
 
 ## Arquitectura
 
