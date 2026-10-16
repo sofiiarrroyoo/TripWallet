@@ -105,7 +105,7 @@ export function FormularioNuevoViaje({ monedas }: { monedas: Moneda[] }) {
 
   // post: si el JavaScript no llegara a cargar, el envío nativo del formulario no deja los datos en la URL.
   return (
-    <form method="post" noValidate onSubmit={enviar} className="grid gap-x-6 gap-y-5 md:grid-cols-2">
+    <form method="post" noValidate onSubmit={enviar} className="grid gap-x-6 gap-y-4 md:grid-cols-2">
       {errorGeneral && (
         <Alert
           variant="destructive"
