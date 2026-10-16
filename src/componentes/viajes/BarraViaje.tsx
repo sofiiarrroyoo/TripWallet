@@ -8,10 +8,11 @@ import { formatearRangoFechas } from "@/lib/formatos";
 import { RUTA_INICIO_PRIVADO } from "@/lib/rutas";
 import type { Viaje } from "@/tipos/viaje";
 
-// Queda fija arriba mientras se baja por la página: volver, modo debug y cerrar viaje siempre a mano.
+// Queda fija arriba porque lo que scrollea es el contenido de la página, no la página: volver, modo debug y cerrar
+// viaje siempre a mano.
 export function BarraViaje({ viaje }: { viaje: Viaje }) {
   return (
-    <div className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
+    <div className="relative z-30 shrink-0 border-b bg-background">
       <div className={cn("flex items-center gap-3 py-3", MARGENES_PAGINA)}>
         <Link
           href={RUTA_INICIO_PRIVADO}

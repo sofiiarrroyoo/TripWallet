@@ -101,12 +101,16 @@ export function ChatViaje({
     };
   });
 
+  // Lo que scrollea es el contenedor de la página del viaje (la barra y el cuadro de texto quedan fijos), no la ventana.
   useEffect(() => {
+    const contenedor = finDeLaPagina.current?.closest<HTMLElement>("[data-scroll-chat]");
+    if (!contenedor) return;
     function alDesplazar() {
-      pegadoAlFinal.current = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 120;
+      if (!contenedor) return;
+      pegadoAlFinal.current = contenedor.scrollHeight - contenedor.scrollTop - contenedor.clientHeight <= 120;
     }
-    window.addEventListener("scroll", alDesplazar, { passive: true });
-    return () => window.removeEventListener("scroll", alDesplazar);
+    contenedor.addEventListener("scroll", alDesplazar, { passive: true });
+    return () => contenedor.removeEventListener("scroll", alDesplazar);
   }, []);
 
   // Si el bot cerró el viaje, la página se recarga para mostrar el resumen y bloquear el registro de gastos.

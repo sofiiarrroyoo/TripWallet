@@ -40,8 +40,9 @@ export default async function PaginaViaje({ params }: PageProps<"/viajes/[id]">)
 
   return (
     <ProveedorModoDebug>
-    <section aria-labelledby="titulo-viaje">
+    <section aria-labelledby="titulo-viaje" className="-mb-16 flex h-[calc(100dvh-4rem)] flex-col">
       <BarraViaje viaje={viaje} />
+      <div data-scroll-chat className="min-h-0 flex-1 overflow-y-auto">
       <CuerpoPagina>
         <dl className="grid gap-5 rounded-md bg-foreground p-6 text-background sm:grid-cols-3">
           <Dato etiqueta="Moneda base" valor={viaje.monedaBase} />
@@ -66,6 +67,7 @@ export default async function PaginaViaje({ params }: PageProps<"/viajes/[id]">)
           calificaciones={calificaciones}
         />
       </CuerpoPagina>
+      </div>
     </section>
     </ProveedorModoDebug>
   );
