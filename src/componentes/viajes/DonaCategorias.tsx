@@ -1,11 +1,11 @@
 import { formatearMonto, formatearPorcentaje } from "@/lib/formatos";
 import { redondearAUnDecimal, sumarMontos } from "@/lib/numeros";
 import type { PanelViaje } from "@/tipos/panel";
+import { CANTIDAD_CATEGORIAS_CON_COLOR, colorDeCategoria } from "./coloresCategorias";
 import { SeccionPlegable } from "./SeccionPlegable";
 
-// Cuántas categorías se muestran por separado; el resto se junta en "Otras" para que cada color se distinga.
-const CATEGORIAS_VISIBLES = 5;
-const COLORES = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "#e0a95a", "#9aa5a2"];
+// Las categorías con color propio se muestran por separado; el resto se junta en "Otras".
+const CATEGORIAS_VISIBLES = CANTIDAD_CATEGORIAS_CON_COLOR;
 // Con r = 100 / (2π) el perímetro mide 100: cada porcentaje es directamente el largo del arco.
 const RADIO = 15.9155;
 
@@ -21,7 +21,7 @@ function armarPorciones(panel: PanelViaje): Porcion[] {
   let acumulado = 0;
   return grupos.map((grupo, indice) => {
     const porcentaje = panel.gastado > 0 ? (grupo.total / panel.gastado) * 100 : 0;
-    const porcion = { ...grupo, porcentaje, color: COLORES[indice % COLORES.length], desplazamiento: -acumulado };
+    const porcion = { ...grupo, porcentaje, color: colorDeCategoria(indice), desplazamiento: -acumulado };
     acumulado += porcentaje;
     return porcion;
   });

@@ -2,6 +2,7 @@ import { CircleAlert } from "lucide-react";
 import { formatearMonto, formatearPorcentaje, formatearRangoFechas } from "@/lib/formatos";
 import type { ResumenViaje } from "@/tipos/cierre";
 import { BarraProgreso } from "./BarraProgreso";
+import { colorDeCategoria } from "./coloresCategorias";
 import { SeccionPlegable } from "./SeccionPlegable";
 import { partesDeResumen } from "./textoResumen";
 
@@ -121,7 +122,7 @@ export function ResumenDelViaje({ resumen }: Props) {
           En qué se fue la plata
         </h3>
         <ul className="flex flex-col gap-4">
-          {estadisticas.porCategoria.map((categoria) => (
+          {estadisticas.porCategoria.map((categoria, posicion) => (
             <li key={categoria.categoria} className="flex flex-col gap-1.5">
               <p className="flex flex-wrap items-baseline justify-between gap-x-4">
                 <span className="font-medium">{categoria.categoria}</span>
@@ -129,7 +130,7 @@ export function ResumenDelViaje({ resumen }: Props) {
                   {monto(categoria.total)} · {formatearPorcentaje(categoria.porcentajeDelTotal)}
                 </span>
               </p>
-              <BarraProgreso porcentaje={categoria.porcentajeDelTotal} />
+              <BarraProgreso porcentaje={categoria.porcentajeDelTotal} color={colorDeCategoria(posicion)} />
               <p className="text-sm text-muted-foreground">
                 {categoria.cantidad} {categoria.cantidad === 1 ? "gasto" : "gastos"}
               </p>
