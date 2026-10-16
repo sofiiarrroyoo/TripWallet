@@ -46,7 +46,7 @@ export default async function PaginaViajes() {
 
   return (
     <section aria-labelledby="titulo-viajes">
-      <EncabezadoPagina compacto ancho="max-w-6xl">
+      <EncabezadoPagina compacto ancho="max-w-none">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <h1 id="titulo-viajes" className={CLASES_TITULO_PAGINA}>
             Mis viajes
@@ -54,8 +54,8 @@ export default async function PaginaViajes() {
           <BotonNuevoViaje texto="Nuevo viaje" />
         </div>
       </EncabezadoPagina>
-      <CuerpoPagina ancho="max-w-6xl">
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <CuerpoPagina ancho="max-w-none">
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
           {viajes.map((viaje) => (
             <li key={viaje.id}>
               <ItemViaje viaje={viaje} hoy={hoy} />
