@@ -105,11 +105,11 @@ export function FormularioNuevoViaje({ monedas }: { monedas: Moneda[] }) {
 
   // post: si el JavaScript no llegara a cargar, el envío nativo del formulario no deja los datos en la URL.
   return (
-    <form method="post" noValidate onSubmit={enviar} className="flex flex-col gap-6">
+    <form method="post" noValidate onSubmit={enviar} className="grid gap-x-6 gap-y-5 md:grid-cols-2">
       {errorGeneral && (
         <Alert
           variant="destructive"
-          className="animate-in fade-in slide-in-from-top-1 duration-200 motion-reduce:animate-none"
+          className="md:col-span-2 animate-in fade-in slide-in-from-top-1 duration-200 motion-reduce:animate-none"
         >
           <CircleAlert aria-hidden />
           <AlertDescription>
@@ -168,7 +168,39 @@ export function FormularioNuevoViaje({ monedas }: { monedas: Moneda[] }) {
         <MensajeErrorCampo id={idError("monedaBase")} mensaje={errores.monedaBase} />
       </div>
 
-      <fieldset className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="presupuestoTotal">Presupuesto total (opcional)</Label>
+        <div className="relative">
+          <Input
+            id="presupuestoTotal"
+            name="presupuestoTotal"
+            inputMode="decimal"
+            autoComplete="off"
+            placeholder="Ej. 1500000"
+            value={valores.presupuestoTotal}
+            onChange={(evento) => cambiar("presupuestoTotal", evento.target.value)}
+            aria-invalid={Boolean(errores.presupuestoTotal)}
+            aria-describedby={descripcion("presupuestoTotal", errores.presupuestoTotal, "presupuestoTotal-ayuda")}
+            className="h-11 pr-16 text-base md:text-base"
+          />
+          {valores.monedaBase && (
+            <span
+              aria-hidden
+              className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground"
+            >
+              {valores.monedaBase}
+            </span>
+          )}
+        </div>
+        <p id="presupuestoTotal-ayuda" className="text-sm text-muted-foreground">
+          {valores.monedaBase
+            ? `En ${valores.monedaBase}. Si lo cargás, te aviso cuánto te queda mientras viajás.`
+            : "En la moneda base. Si lo cargás, te aviso cuánto te queda mientras viajás."}
+        </p>
+        <MensajeErrorCampo id={idError("presupuestoTotal")} mensaje={errores.presupuestoTotal} />
+      </div>
+
+      <fieldset className="flex min-w-0 flex-col gap-2 md:col-span-2">
         <legend className="sr-only">Fechas del viaje</legend>
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="flex flex-col gap-2">
@@ -203,39 +235,7 @@ export function FormularioNuevoViaje({ monedas }: { monedas: Moneda[] }) {
         </div>
       </fieldset>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="presupuestoTotal">Presupuesto total (opcional)</Label>
-        <div className="relative">
-          <Input
-            id="presupuestoTotal"
-            name="presupuestoTotal"
-            inputMode="decimal"
-            autoComplete="off"
-            placeholder="Ej. 1500000"
-            value={valores.presupuestoTotal}
-            onChange={(evento) => cambiar("presupuestoTotal", evento.target.value)}
-            aria-invalid={Boolean(errores.presupuestoTotal)}
-            aria-describedby={descripcion("presupuestoTotal", errores.presupuestoTotal, "presupuestoTotal-ayuda")}
-            className="h-11 pr-16 text-base md:text-base"
-          />
-          {valores.monedaBase && (
-            <span
-              aria-hidden
-              className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground"
-            >
-              {valores.monedaBase}
-            </span>
-          )}
-        </div>
-        <p id="presupuestoTotal-ayuda" className="text-sm text-muted-foreground">
-          {valores.monedaBase
-            ? `En ${valores.monedaBase}. Si lo cargás, te aviso cuánto te queda mientras viajás.`
-            : "En la moneda base. Si lo cargás, te aviso cuánto te queda mientras viajás."}
-        </p>
-        <MensajeErrorCampo id={idError("presupuestoTotal")} mensaje={errores.presupuestoTotal} />
-      </div>
-
-      <Button type="submit" disabled={enviando} className="h-11 self-start px-6 text-base">
+      <Button type="submit" disabled={enviando} className="h-11 self-start px-6 text-base md:col-span-2">
         {enviando && <LoaderCircle aria-hidden className="animate-spin motion-reduce:animate-none" />}
         {enviando ? "Creando viaje…" : "Crear viaje"}
       </Button>

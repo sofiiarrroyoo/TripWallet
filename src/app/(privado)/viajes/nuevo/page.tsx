@@ -18,17 +18,16 @@ export default async function PaginaNuevoViaje() {
   return (
     <section aria-labelledby="titulo-nuevo-viaje">
       <EncabezadoPagina compacto ancho="max-w-none">
-        <EnlaceVolver href={RUTA_INICIO_PRIVADO}>Mis viajes</EnlaceVolver>
-        <h1 id="titulo-nuevo-viaje" className={CLASES_TITULO_PAGINA}>
-          Nuevo viaje
-        </h1>
-        <p className="max-w-xl text-lg">
-          Elegí en qué moneda querés ver tus gastos. Lo demás lo podés contar después en el chat.
-        </p>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <h1 id="titulo-nuevo-viaje" className={CLASES_TITULO_PAGINA}>
+            Nuevo viaje
+          </h1>
+          <EnlaceVolver href={RUTA_INICIO_PRIVADO}>Mis viajes</EnlaceVolver>
+        </div>
       </EncabezadoPagina>
       <CuerpoPagina ancho="max-w-none">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,40rem)_minmax(0,22rem)] lg:items-start">
-          <div className="flex flex-col gap-6 rounded-2xl bg-card p-6 shadow-sm ring-1 ring-foreground/10 sm:p-8">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,52rem)_minmax(0,22rem)] lg:items-start">
+          <div className="flex flex-col gap-6 rounded-2xl bg-card p-6 shadow-sm ring-1 ring-foreground/10 max-sm:rounded-none max-sm:bg-transparent max-sm:p-0 max-sm:shadow-none max-sm:ring-0 sm:p-8">
             {fuente === "respaldo" && (
               <p role="status" className="rounded-md bg-muted p-4">
                 No pudimos consultar las cotizaciones, así que te mostramos la lista estándar de monedas. Podés
