@@ -29,7 +29,7 @@ export function EncabezadoPagina({
     <div
       className={cn(
         "corte-diagonal bg-escenario text-escenario-foreground",
-        compacto ? "pt-16 pb-8 lg:pt-20 lg:pb-10" : "pt-20 pb-10 lg:pt-28 lg:pb-14",
+        compacto ? "pt-16 pb-8 lg:pt-16 lg:pb-8" : "pt-20 pb-10 lg:pt-28 lg:pb-14",
         MARGENES_PAGINA,
         className,
       )}
