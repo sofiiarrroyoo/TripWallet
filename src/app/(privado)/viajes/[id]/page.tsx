@@ -36,7 +36,7 @@ export default async function PaginaViaje({ params }: PageProps<"/viajes/[id]">)
     <section aria-labelledby="titulo-viaje" className="-mb-16 flex h-[calc(100dvh-4rem)] flex-col">
       <BarraViaje viaje={viaje} />
       <div className="flex min-h-0 flex-1">
-      <div data-scroll-chat className="min-h-0 min-w-0 flex-1 overflow-y-auto">
+      <div data-scroll-chat className="min-h-0 min-w-0 flex-[11] overflow-y-auto">
       <CuerpoPagina>
         {viaje.estado === "cerrado" && <ResumenDelViaje resumen={resumen} />}
         <ChatViaje

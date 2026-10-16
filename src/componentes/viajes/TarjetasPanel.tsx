@@ -21,8 +21,8 @@ export function TarjetasPanel({ panel }: { panel: PanelViaje }) {
   const excedido = presupuesto !== null && presupuesto.restante < 0;
 
   return (
-    <dl className="grid grid-cols-2 gap-3">
-      <Tarjeta etiqueta="Gastado" className="col-span-2 bg-primary text-primary-foreground ring-0 [&_dt]:text-primary-foreground/80">
+    <dl className="@container grid grid-cols-1 gap-3 @md:grid-cols-2">
+      <Tarjeta etiqueta="Gastado" className="@md:col-span-2 bg-primary text-primary-foreground ring-0 [&_dt]:text-primary-foreground/80">
         <p className="text-4xl font-semibold tracking-tight">{formatearMonto(panel.gastado, monedaBase)}</p>
         <p className="text-sm text-primary-foreground/80">
           {panel.cantidadGastos === 1 ? "1 gasto registrado" : `${panel.cantidadGastos} gastos registrados`}
