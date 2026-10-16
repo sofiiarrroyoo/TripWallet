@@ -57,7 +57,7 @@ export function CuerpoPagina({
 
 export function EnlaceVolver({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <Link href={href} className="flex items-center gap-1.5 self-start font-medium underline-offset-4 hover:underline">
+    <Link href={href} className="flex h-10 items-center gap-2 self-start rounded-full border bg-background px-4 font-medium hover:bg-muted">
       <ArrowLeft aria-hidden className="size-4" />
       {children}
     </Link>
