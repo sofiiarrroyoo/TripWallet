@@ -8,6 +8,7 @@ import { ResumenDelViaje } from "@/componentes/viajes/ResumenDelViaje";
 import { CuerpoPagina } from "@/componentes/pagina/Pagina";
 import { ErrorNoEncontrado } from "@/errores";
 import { PanelLateral } from "@/componentes/viajes/PanelLateral";
+import { ProveedorPanel } from "@/componentes/viajes/PanelEstadisticas";
 import { fechaIsoEn } from "@/lib/fechas";
 import { obtenerPanelViaje } from "@/servicios/panelViaje";
 import { cargarChat } from "@/servicios/chat";
@@ -33,6 +34,7 @@ export default async function PaginaViaje({ params }: PageProps<"/viajes/[id]">)
 
   return (
     <ProveedorModoDebug>
+    <ProveedorPanel>
     <section aria-labelledby="titulo-viaje" className="-mb-16 flex h-[calc(100dvh-4rem)] flex-col">
       <BarraViaje viaje={viaje} />
       <div className="flex min-h-0 flex-1">
@@ -53,6 +55,7 @@ export default async function PaginaViaje({ params }: PageProps<"/viajes/[id]">)
       <PanelLateral panel={panel} />
       </div>
     </section>
+    </ProveedorPanel>
     </ProveedorModoDebug>
   );
 }

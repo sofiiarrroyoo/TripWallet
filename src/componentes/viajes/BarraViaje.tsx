@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BotonModoDebug } from "@/componentes/chat/ModoDebug";
 import { MARGENES_PAGINA } from "@/componentes/pagina/Pagina";
 import { AccionesViaje } from "@/componentes/viajes/AccionesViaje";
+import { BotonVerEstadisticas } from "@/componentes/viajes/PanelEstadisticas";
 import { cn } from "cn";
 import { formatearRangoFechas } from "@/lib/formatos";
 import { RUTA_INICIO_PRIVADO } from "@/lib/rutas";
@@ -29,6 +30,7 @@ export function BarraViaje({ viaje }: { viaje: Viaje }) {
             {viaje.destino} · {formatearRangoFechas(viaje.fechaInicio, viaje.fechaFin)}
           </p>
         </div>
+        <BotonVerEstadisticas />
         <BotonModoDebug />
         <AccionesViaje viajeId={viaje.id} estado={viaje.estado} />
       </div>
