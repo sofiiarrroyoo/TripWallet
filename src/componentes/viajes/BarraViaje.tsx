@@ -12,12 +12,12 @@ import type { Viaje } from "@/tipos/viaje";
 // viaje siempre a mano.
 export function BarraViaje({ viaje }: { viaje: Viaje }) {
   return (
-    <div className="relative z-30 shrink-0 border-b bg-background">
+    <div className="relative z-30 shrink-0 bg-primary text-primary-foreground">
       <div className={cn("flex items-center gap-3 py-3", MARGENES_PAGINA)}>
         <Link
           href={RUTA_INICIO_PRIVADO}
           aria-label="Volver a mis viajes"
-          className="flex size-10 shrink-0 items-center justify-center rounded-full border hover:bg-muted"
+          className="flex size-10 shrink-0 items-center justify-center rounded-full border border-primary-foreground/40 hover:bg-primary-foreground/10"
         >
           <ArrowLeft aria-hidden className="size-5" />
         </Link>
@@ -25,7 +25,7 @@ export function BarraViaje({ viaje }: { viaje: Viaje }) {
           <h1 id="titulo-viaje" className="truncate text-lg leading-tight font-semibold tracking-tight">
             {viaje.nombre}
           </h1>
-          <p className="truncate text-sm text-muted-foreground">
+          <p className="truncate text-sm text-primary-foreground/80">
             {viaje.destino} · {formatearRangoFechas(viaje.fechaInicio, viaje.fechaFin)}
           </p>
         </div>
