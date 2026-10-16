@@ -26,7 +26,7 @@ export default async function PaginaNuevoViaje() {
         </div>
       </EncabezadoPagina>
       <CuerpoPagina ancho="max-w-none" className="pt-6">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,52rem)_minmax(0,22rem)] lg:items-start">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
           <div className="flex flex-col gap-6 rounded-2xl bg-card p-6 shadow-sm ring-1 ring-foreground/10 max-sm:rounded-none max-sm:bg-transparent max-sm:p-0 max-sm:shadow-none max-sm:ring-0">
             {fuente === "respaldo" && (
               <p role="status" className="rounded-md bg-muted p-4">
